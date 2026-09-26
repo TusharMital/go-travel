@@ -861,6 +861,313 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /storage/locations:
+    get:
+      summary: Search storage locations near point/time window
+      tags:
+        - Storage
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: lng
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: radius_km
+          schema:
+            type: number
+            default: 10
+        - in: query
+          name: drop_off_at
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: pick_up_at
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: bag_count
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: max_price
+          schema:
+            type: number
+        - in: query
+          name: item_size
+          schema:
+            type: string
+            enum: [cabin, large, oversized]
+        - in: query
+          name: city
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated storage locations sorted by relevance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageLocation'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /storage/locations/{id}:
+    get:
+      summary: Get storage location details by ID
+      tags:
+        - Storage
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Location detail with 14-day upcoming inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageLocation'
+        '404':
+          description: Location not found
+
+  /storage/locations/{id}/inventory:
+    post:
+      summary: Set/update capacity and pricing per date (partner only)
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - inventories
+              properties:
+                inventories:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - date
+                      - total_capacity
+                      - price_per_bag_per_day
+                    properties:
+                      date:
+                        type: string
+                        example: '2026-10-15'
+                      total_capacity:
+                        type: integer
+                      price_per_bag_per_day:
+                        type: number
+      responses:
+        '200':
+          description: Inventory updated successfully
+        '403':
+          description: Forbidden - Not partner owner
+
+  /storage/bookings:
+    get:
+      summary: List user storage bookings
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, confirmed, checked_in, checked_out, cancelled, expired]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StorageBooking'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Create idempotent storage booking with atomic capacity check
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - location_id
+                - bag_count
+                - drop_off_at
+                - pick_up_at
+              properties:
+                location_id:
+                  type: string
+                  format: uuid
+                trip_id:
+                  type: string
+                  format: uuid
+                bag_count:
+                  type: integer
+                  minimum: 1
+                drop_off_at:
+                  type: string
+                  format: date-time
+                pick_up_at:
+                  type: string
+                  format: date-time
+                currency:
+                  type: string
+                  default: USD
+      responses:
+        '201':
+          description: Booking confirmed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StorageBooking'
+        '400':
+          description: Missing idempotency key or validation error
+        '409':
+          description: Capacity exceeded or conflict
+
+  /storage/bookings/{id}/confirm:
+    post:
+      summary: Confirm storage booking
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking confirmed
+
+  /storage/bookings/{id}/check-in:
+    post:
+      summary: Check in bags at location
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bags checked in
+
+  /storage/bookings/{id}/check-out:
+    post:
+      summary: Check out bags and complete booking
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bags checked out
+
+  /storage/bookings/{id}/cancel:
+    post:
+      summary: Cancel booking, restore inventory capacity, and issue refund
+      tags:
+        - Storage
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled and refunded
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1117,4 +1424,77 @@ components:
         walkingDurationSeconds:
           type: integer
         formattedDuration:
+          type: string
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+
+    StorageLocation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        distance_km:
+          type: number
+        distance_meters:
+          type: integer
+        price_per_bag_per_day:
+          type: number
+        available_capacity:
+          type: integer
+        rating:
+          type: number
+        review_count:
+          type: integer
+        relevance_score:
+          type: number
+        max_bag_size:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+
+    StorageBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        location_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, checked_in, checked_out, cancelled, expired]
+        bag_count:
+          type: integer
+        drop_off_at:
+          type: string
+          format: date-time
+        pick_up_at:
+          type: string
+          format: date-time
+        price_total:
+          type: number
+        currency:
           type: string

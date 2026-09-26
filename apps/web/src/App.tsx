@@ -4,6 +4,8 @@ import { Navbar } from './components/Navbar';
 import { AuthModal, AuthMode } from './components/AuthModal';
 import { TripList } from './components/TripList';
 import { TripTimeline } from './components/TripTimeline';
+import { StorageDiscovery } from './components/StorageDiscovery';
+import { MyStorageBookings } from './components/MyStorageBookings';
 import {
   Luggage,
   MapPin,
@@ -27,7 +29,8 @@ function Dashboard() {
 
   // Active view management
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'trips' | 'workbench'>('trips');
+  const [activeTab, setActiveTab] = useState<'trips' | 'storage' | 'bookings' | 'workbench'>('trips');
+  const [storageSearchCoords, setStorageSearchCoords] = useState<{ lat: number; lng: number } | undefined>(undefined);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -45,7 +48,14 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <Navbar onOpenAuth={openAuth} />
+      <Navbar
+        onOpenAuth={openAuth}
+        activeTab={activeTab === 'workbench' ? 'trips' : activeTab}
+        onChangeTab={(tab) => {
+          setActiveTab(tab);
+          if (tab === 'trips') setSelectedTripId(null);
+        }}
+      />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Unverified Email Warning Banner */}
@@ -122,7 +132,7 @@ function Dashboard() {
         {isAuthenticated && (
           <div className="space-y-6">
             {/* Top Navigation Tabs */}
-            <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
               <button
                 onClick={() => {
                   setActiveTab('trips');
@@ -139,6 +149,30 @@ function Dashboard() {
               </button>
 
               <button
+                onClick={() => setActiveTab('storage')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'storage'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Luggage className="w-3.5 h-3.5" />
+                <span>Find Luggage Storage</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('bookings')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'bookings'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>My Storage Bookings</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('workbench')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
                   activeTab === 'workbench'
@@ -147,7 +181,7 @@ function Dashboard() {
                 }`}
               >
                 <Shield className="w-3.5 h-3.5" />
-                <span>Session & RBAC Workbench</span>
+                <span>Session & Roles</span>
               </button>
             </div>
 
@@ -159,7 +193,8 @@ function Dashboard() {
                     tripId={selectedTripId}
                     onBack={() => setSelectedTripId(null)}
                     onFindStorage={(loc) => {
-                      alert(`Finding storage near coordinates: (${loc.lat}, ${loc.lng}) - Module 4.3 ready!`);
+                      setStorageSearchCoords({ lat: loc.lat, lng: loc.lng });
+                      setActiveTab('storage');
                     }}
                   />
                 ) : (
@@ -167,6 +202,17 @@ function Dashboard() {
                 )}
               </div>
             )}
+
+            {/* TAB CONTENT: STORAGE DISCOVERY */}
+            {activeTab === 'storage' && (
+              <StorageDiscovery
+                initialCoordinates={storageSearchCoords}
+                tripId={selectedTripId || undefined}
+              />
+            )}
+
+            {/* TAB CONTENT: MY STORAGE BOOKINGS */}
+            {activeTab === 'bookings' && <MyStorageBookings />}
 
             {/* TAB CONTENT: SESSION WORKBENCH */}
             {activeTab === 'workbench' && user && (

@@ -7,6 +7,7 @@ import { errorHandler } from './middlewares/error.middleware.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { tripsRouter } from './modules/trips/trips.routes.js';
 import { locationRouter } from './modules/location/location.routes.js';
+import { storageRouter } from './modules/storage/storage.routes.js';
 
 export function createApp(): Application {
   const app = express();
@@ -37,6 +38,7 @@ export function createApp(): Application {
   apiV1Router.use('/auth', authRouter);
   apiV1Router.use('/trips', tripsRouter);
   apiV1Router.use('/location', locationRouter);
+  apiV1Router.use('/storage', storageRouter);
 
   app.use('/api/v1', apiV1Router);
 

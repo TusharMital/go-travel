@@ -74,6 +74,148 @@ let demoTrips = [
   },
 ];
 
+let demoStorageLocations = [
+  {
+    id: 'loc-berlin-alex',
+    name: 'Alexanderplatz Luggage Hub',
+    address: 'Dircksenstrasse 2, 10178 Berlin',
+    city: 'Berlin',
+    lat: 52.5219,
+    lng: 13.4132,
+    distance_km: 0.4,
+    distance_meters: 420,
+    walking_time: { duration_minutes: 5, formatted_duration: '5 mins' },
+    price_per_bag_per_day: 6.5,
+    available_capacity: 35,
+    rating: 4.9,
+    review_count: 38,
+    relevance_score: 0.94,
+    max_bag_size: 'oversized',
+    accepted_item_categories: ['luggage', 'backpack', 'shopping_bags'],
+    opening_hours: {
+      mon: { open: '08:00', close: '22:00' },
+      tue: { open: '08:00', close: '22:00' },
+      wed: { open: '08:00', close: '22:00' },
+      thu: { open: '08:00', close: '22:00' },
+      fri: { open: '08:00', close: '22:00' },
+      sat: { open: '08:00', close: '22:00' },
+      sun: { open: '08:00', close: '22:00' },
+    },
+    photos: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
+    provider: { business_name: 'Berlin SafeStorage GmbH', verification_status: 'verified' },
+  },
+  {
+    id: 'loc-berlin-hbf',
+    name: 'Berlin Hbf Central Lockers',
+    address: 'Europaplatz 1, 10557 Berlin',
+    city: 'Berlin',
+    lat: 52.5251,
+    lng: 13.3694,
+    distance_km: 1.2,
+    distance_meters: 1200,
+    walking_time: { duration_minutes: 14, formatted_duration: '14 mins' },
+    price_per_bag_per_day: 7.0,
+    available_capacity: 28,
+    rating: 4.8,
+    review_count: 52,
+    relevance_score: 0.88,
+    max_bag_size: 'large',
+    accepted_item_categories: ['luggage', 'backpack'],
+    opening_hours: {
+      mon: { open: '06:00', close: '23:00' },
+      tue: { open: '06:00', close: '23:00' },
+      wed: { open: '06:00', close: '23:00' },
+      thu: { open: '06:00', close: '23:00' },
+      fri: { open: '06:00', close: '23:00' },
+      sat: { open: '06:00', close: '23:00' },
+      sun: { open: '06:00', close: '23:00' },
+    },
+    photos: ['https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80'],
+    provider: { business_name: 'Hauptbahnhof Luggage Point', verification_status: 'verified' },
+  },
+  {
+    id: 'loc-berlin-friedrich',
+    name: 'Friedrichstraße Safe Stash',
+    address: 'Georgenstrasse 14, 10117 Berlin',
+    city: 'Berlin',
+    lat: 52.5205,
+    lng: 13.3872,
+    distance_km: 1.5,
+    distance_meters: 1500,
+    walking_time: { duration_minutes: 18, formatted_duration: '18 mins' },
+    price_per_bag_per_day: 5.5,
+    available_capacity: 15,
+    rating: 4.7,
+    review_count: 19,
+    relevance_score: 0.82,
+    max_bag_size: 'large',
+    accepted_item_categories: ['luggage', 'backpack'],
+    opening_hours: {
+      mon: { open: '08:00', close: '20:00' },
+      tue: { open: '08:00', close: '20:00' },
+      wed: { open: '08:00', close: '20:00' },
+      thu: { open: '08:00', close: '20:00' },
+      fri: { open: '08:00', close: '20:00' },
+      sat: { open: '08:00', close: '20:00' },
+      sun: { open: '08:00', close: '20:00' },
+    },
+    photos: ['https://images.unsplash.com/photo-1584982751601-97dcc096659c?auto=format&fit=crop&w=600&q=80'],
+    provider: { business_name: 'Mitte Luggage Care', verification_status: 'verified' },
+  },
+  {
+    id: 'loc-paris-nord',
+    name: 'Gare du Nord Express Storage',
+    address: '18 Rue de Dunkerque, 75010 Paris',
+    city: 'Paris',
+    lat: 48.8809,
+    lng: 2.3553,
+    distance_km: 0.3,
+    distance_meters: 300,
+    walking_time: { duration_minutes: 4, formatted_duration: '4 mins' },
+    price_per_bag_per_day: 6.0,
+    available_capacity: 40,
+    rating: 4.9,
+    review_count: 64,
+    relevance_score: 0.95,
+    max_bag_size: 'oversized',
+    accepted_item_categories: ['luggage', 'backpack', 'odd_size'],
+    opening_hours: {
+      mon: { open: '06:00', close: '23:30' },
+      tue: { open: '06:00', close: '23:30' },
+      wed: { open: '06:00', close: '23:30' },
+      thu: { open: '06:00', close: '23:30' },
+      fri: { open: '06:00', close: '23:30' },
+      sat: { open: '06:00', close: '23:30' },
+      sun: { open: '06:00', close: '23:30' },
+    },
+    photos: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
+    provider: { business_name: 'Paris Consigne Gare', verification_status: 'verified' },
+  },
+];
+
+let demoStorageBookings = [
+  {
+    id: 'sb-demo-1',
+    user_id: 'u-demo-1',
+    location_id: 'loc-berlin-alex',
+    status: 'confirmed',
+    bag_count: 2,
+    drop_off_at: new Date(Date.now() + 86400000 + 3 * 3600000).toISOString(),
+    pick_up_at: new Date(Date.now() + 86400000 + 8 * 3600000).toISOString(),
+    price_total: 13.0,
+    currency: 'USD',
+    idempotency_key: 'idem-demo-1',
+    location: {
+      name: 'Alexanderplatz Luggage Hub',
+      address: 'Dircksenstrasse 2, 10178 Berlin',
+      city: 'Berlin',
+      lat: 52.5219,
+      lng: 13.4132,
+      photos: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
+    },
+  },
+];
+
 class ApiClient {
   private getAccessToken(): string | null {
     return localStorage.getItem('travel_access_token');
@@ -350,12 +492,107 @@ class ApiClient {
       }
     }
 
+    // Storage locations mock fallback
+    if (endpoint.startsWith('/storage/locations')) {
+      const locMatch = endpoint.match(/\/storage\/locations\/([^\/?]+)/);
+      if (locMatch) {
+        const found =
+          demoStorageLocations.find((l) => l.id === locMatch[1]) || demoStorageLocations[0];
+        return found as unknown as T;
+      }
+
+      let results = [...demoStorageLocations];
+      if (endpoint.includes('paris')) {
+        results = results.filter((l) => l.city.toLowerCase() === 'paris');
+      } else if (endpoint.includes('berlin')) {
+        results = results.filter((l) => l.city.toLowerCase() === 'berlin');
+      }
+
+      return {
+        data: results,
+        meta: { total: results.length, page: 1, limit: 20, totalPages: 1 },
+      } as unknown as T;
+    }
+
+    // Storage bookings mock fallback
+    if (endpoint.startsWith('/storage/bookings')) {
+      if (endpoint.includes('/cancel') && options.method === 'POST') {
+        const parts = endpoint.split('/');
+        const bookingId = parts[3];
+        const b = demoStorageBookings.find((x) => x.id === bookingId);
+        if (b) b.status = 'cancelled';
+        return { message: 'Booking cancelled.', status: 'cancelled' } as unknown as T;
+      }
+
+      if (options.method === 'POST') {
+        const body = JSON.parse((options.body as string) || '{}');
+        const loc =
+          demoStorageLocations.find((l) => l.id === body.location_id) || demoStorageLocations[0];
+        const newBooking = {
+          id: `sb-${Date.now()}`,
+          user_id: 'u-demo-1',
+          location_id: body.location_id,
+          trip_id: body.trip_id || null,
+          status: 'confirmed',
+          bag_count: body.bag_count || 1,
+          drop_off_at: body.drop_off_at,
+          pick_up_at: body.pick_up_at,
+          price_total: Number(loc.price_per_bag_per_day) * (body.bag_count || 1),
+          currency: 'USD',
+          idempotency_key: (options.headers as any)?.['Idempotency-Key'] || `idem-${Date.now()}`,
+          location: loc,
+        };
+        demoStorageBookings.unshift(newBooking);
+        return newBooking as unknown as T;
+      }
+
+      return {
+        data: demoStorageBookings,
+        meta: { total: demoStorageBookings.length, page: 1, limit: 20, totalPages: 1 },
+      } as unknown as T;
+    }
+
     return {} as T;
   }
 
   setSession(accessToken: string, refreshToken: string) {
     this.setTokens(accessToken, refreshToken);
   }
+
+  async searchStorageLocations(query: any): Promise<any> {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) params.append(k, String(v));
+    });
+    return this.request(`/storage/locations?${params.toString()}`);
+  }
+
+  async getStorageLocation(id: string): Promise<any> {
+    return this.request(`/storage/locations/${id}`);
+  }
+
+  async createStorageBooking(data: any, idempotencyKey: string): Promise<any> {
+    return this.request('/storage/bookings', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async listMyStorageBookings(page = 1, limit = 20, status?: string): Promise<any> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.append('status', status);
+    return this.request(`/storage/bookings?${params.toString()}`);
+  }
+
+  async cancelStorageBooking(id: string, reason?: string): Promise<any> {
+    return this.request(`/storage/bookings/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
 }
 
 export const api = new ApiClient();
+export const apiClient = api;
+

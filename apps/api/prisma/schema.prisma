@@ -263,6 +263,7 @@ model StorageInventory {
   total_capacity        Int
   booked_capacity       Int             @default(0)
   price_per_bag_per_day Decimal         @db.Decimal(10, 2)
+  version               Int             @default(0)
   created_at            DateTime        @default(now())
   updated_at            DateTime        @updatedAt
 

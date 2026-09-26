@@ -112,3 +112,29 @@ export interface IAuditLogData {
   correlationId: string;
   timestamp?: Date;
 }
+
+export const ALLOWED_STORAGE_TRANSITIONS: Record<StorageBookingStatus, StorageBookingStatus[]> = {
+  [StorageBookingStatus.PENDING]: [
+    StorageBookingStatus.CONFIRMED,
+    StorageBookingStatus.CANCELLED,
+    StorageBookingStatus.EXPIRED,
+  ],
+  [StorageBookingStatus.CONFIRMED]: [
+    StorageBookingStatus.CHECKED_IN,
+    StorageBookingStatus.CANCELLED,
+  ],
+  [StorageBookingStatus.CHECKED_IN]: [
+    StorageBookingStatus.CHECKED_OUT,
+  ],
+  [StorageBookingStatus.CHECKED_OUT]: [],
+  [StorageBookingStatus.CANCELLED]: [],
+  [StorageBookingStatus.EXPIRED]: [],
+};
+
+export function canTransitionStorageBooking(
+  fromStatus: StorageBookingStatus,
+  toStatus: StorageBookingStatus
+): boolean {
+  const allowed = ALLOWED_STORAGE_TRANSITIONS[fromStatus] || [];
+  return allowed.includes(toStatus);
+}

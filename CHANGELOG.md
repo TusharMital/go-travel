@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.4: Storage Module (Discovery, Inventory, Booking)**:
+  - Discovery endpoint: `GET /api/v1/storage/locations` with geo-radius search, date/time window check, opening hours filter, bag size validation, and weighted composite relevance ranking ($50\%$ distance, $30\%$ rating, $20\%$ price).
+  - Location details endpoint: `GET /api/v1/storage/locations/:id` with 14-day upcoming inventory.
+  - Partner inventory endpoint: `POST /api/v1/storage/locations/:id/inventory` allowing verified storage partners/admins to configure capacity and pricing per date.
+  - Idempotent booking endpoint: `POST /api/v1/storage/bookings` protected by `Idempotency-Key` and executed in an atomic DB transaction with optimistic version checking (`version Int @default(0)` on `StorageInventory`) to prevent overbooking under high concurrency.
+  - Concurrency validation: 20 simultaneous requests against 5 remaining slots test asserting exactly 5 succeed (201) and 15 fail safely (409) without overbooking.
+  - State machine transitions (`pending` $\rightarrow$ `confirmed` $\rightarrow$ `checked_in` $\rightarrow$ `checked_out`, plus `cancelled`/`expired`) with allowed-transition validation (`canTransitionStorageBooking`).
+  - Cancellation flow restoring inventory capacity atomically and initiating payment refund via `IPaymentsProvider`.
+  - Immutable audit logs for `STORAGE_BOOKING_CREATED`, `STORAGE_INVENTORY_UPDATED`, `STORAGE_BOOKING_CHECKED_IN`, `STORAGE_BOOKING_CHECKED_OUT`, and `STORAGE_BOOKING_CANCELLED`.
+  - Frontend screens in `@travel/web`:
+    - `StorageDiscovery`: Split interactive SVG city radar map + responsive card list with filters (dates, bags, size, price, city).
+    - `StorageDetailModal`: Comprehensive photo gallery, operating hours, security badges, and direct booking CTA.
+    - `StorageBookingModal`: Real-time price breakdown, bag counter, digital payment preview, and instant QR booking pass confirmation.
+    - `MyStorageBookings`: Reservation dashboard with status filter tabs, digital pass view, and refund-enabled cancellation action.
+    - Deep-link integration from Itinerary gap alert cards ("Find Nearby Storage").
+  - Automated tests in `apps/api/tests/storage.test.ts` (14 tests covering discovery, partner auth, idempotency, concurrency, state machine, and cancellation).
+  - OpenAPI 3.0.3 specification updated with Storage endpoints and schemas.
 - **Module 4.3: Mapping & Location Services**:
   - `LocationProvider` interface in `@travel/shared` with:
     - `geocode(address)`

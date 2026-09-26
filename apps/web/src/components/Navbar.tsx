@@ -4,9 +4,15 @@ import { Compass, ShieldCheck, User as UserIcon, LogOut, CheckCircle2, AlertCirc
 
 interface NavbarProps {
   onOpenAuth: (view: 'login' | 'register') => void;
+  activeTab?: 'trips' | 'storage' | 'bookings';
+  onChangeTab?: (tab: 'trips' | 'storage' | 'bookings') => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
+export const Navbar: React.FC<NavbarProps> = ({
+  onOpenAuth,
+  activeTab = 'trips',
+  onChangeTab,
+}) => {
   const { user, isAuthenticated, logout } = useAuth();
 
   const getRoleBadge = (role: string) => {
@@ -27,18 +33,59 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAuth }) => {
   return (
     <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Brand */}
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-100">
-            <Compass className="w-6 h-6 animate-pulse" />
-          </div>
-          <div>
-            <div className="font-extrabold text-slate-900 tracking-tight text-lg flex items-center space-x-1.5">
-              <span>TravelSync</span>
-              <span className="text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">v1</span>
+        {/* Brand & Tabs */}
+        <div className="flex items-center space-x-8">
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={() => onChangeTab?.('trips')}
+          >
+            <div className="w-10 h-10 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-100">
+              <Compass className="w-6 h-6 animate-pulse" />
             </div>
-            <p className="text-[11px] text-slate-500 font-medium -mt-0.5">Trips • Storage • Transport</p>
+            <div>
+              <div className="font-extrabold text-slate-900 tracking-tight text-lg flex items-center space-x-1.5">
+                <span>TravelSync</span>
+                <span className="text-xs font-semibold uppercase tracking-wider bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">v1</span>
+              </div>
+              <p className="text-[11px] text-slate-500 font-medium -mt-0.5">Trips • Storage • Transport</p>
+            </div>
           </div>
+
+          {/* Navigation Links */}
+          {onChangeTab && (
+            <nav className="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl">
+              <button
+                onClick={() => onChangeTab('trips')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeTab === 'trips'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                My Trips
+              </button>
+              <button
+                onClick={() => onChangeTab('storage')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeTab === 'storage'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Find Storage
+              </button>
+              <button
+                onClick={() => onChangeTab('bookings')}
+                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeTab === 'bookings'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                My Bookings
+              </button>
+            </nav>
+          )}
         </div>
 
         {/* Navigation & Auth */}
