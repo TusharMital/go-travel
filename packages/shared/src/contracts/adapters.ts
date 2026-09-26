@@ -66,10 +66,19 @@ export interface PaymentIntentInput {
   amount: number;
   currency: string;
   userId: string;
-  relatedType: 'STORAGE_BOOKING' | 'TRANSPORT_BOOKING';
+  relatedType: 'STORAGE_BOOKING' | 'TRANSPORT_BOOKING' | 'storage_booking' | 'transport_booking';
   relatedId: string;
   idempotencyKey?: string;
+  testFlag?: string;
   metadata?: Record<string, string>;
+}
+
+export interface PaymentIntentResult {
+  paymentId: string;
+  providerRef: string;
+  status: 'INTENT' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED';
+  clientSecret?: string;
+  errorMessage?: string;
 }
 
 export interface PaymentResult {
@@ -85,14 +94,22 @@ export interface RefundResult {
   providerRef: string;
   status: 'REFUNDED' | 'FAILED';
   refundedAmount: number;
+  errorMessage?: string;
 }
 
-export interface IPaymentsProvider {
+export interface PaymentProvider {
   name: string;
-  createPaymentIntent(input: PaymentIntentInput): Promise<PaymentResult>;
-  capturePayment(paymentRef: string): Promise<PaymentResult>;
-  refundPayment(paymentRef: string, amount?: number): Promise<RefundResult>;
+  createIntent(input: PaymentIntentInput): Promise<PaymentIntentResult>;
+  capture(paymentRef: string, amount?: number): Promise<PaymentResult>;
+  refund(paymentRef: string, amount?: number, reason?: string): Promise<RefundResult>;
+
+  // Compatibility aliases
+  createPaymentIntent?(input: PaymentIntentInput): Promise<PaymentResult>;
+  capturePayment?(paymentRef: string): Promise<PaymentResult>;
+  refundPayment?(paymentRef: string, amount?: number): Promise<RefundResult>;
 }
+
+export type IPaymentsProvider = PaymentProvider;
 
 export interface NotificationPayload {
   toUserId: string;

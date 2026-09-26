@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.7: Payments**:
+  - `PaymentProvider` interface in `@travel/shared` defining `createIntent`, `capture`, `refund` along with strongly typed results (`PaymentIntentResult`, `PaymentResult`, `RefundResult`).
+  - `MockPaymentsAdapter` implementing `PaymentProvider` with full test simulation support: card decline simulation via `test_flag: 'simulate_decline'`, capture failure simulation, and delayed webhook simulation.
+  - Payment-First Booking Confirmation:
+    - Wired storage (`POST /api/v1/storage/bookings`) and transport direct bookings (`POST /api/v1/transport/bookings`) to require successful payment capture first before booking confirmation.
+    - Every booking creates and maintains a corresponding `Payment` row with strict status transitions (`intent` $\rightarrow$ `captured` $\rightarrow$ `refunded` or `failed`).
+  - Explicit Edge Case 1: "Payment succeeded but booking failed":
+    - When booking creation throws an error after payment capture (e.g. inventory exhausted or concurrent conflict), `executeBookingPayment` immediately triggers automatic compensation refund on the payment provider.
+    - Transitions `Payment` status to `refunded` and records audit event `PAYMENT_AUTO_REFUNDED_ON_BOOKING_FAILURE`.
+    - Returns customer reassurance error message confirming refund to original payment method.
+  - Explicit Edge Case 2: "Booking succeeded but payment webhook delayed":
+    - Handles asynchronous payment settlement: creates `Payment` in `intent` status and booking in `pending` status.
+    - Public webhook endpoint `POST /api/v1/payments/webhook` receives external provider events (`payment_intent.succeeded` / `charge.captured`), marks payment `captured`, updates booking to `confirmed`, and publishes `booking-confirmed` to trigger itinerary linking.
+    - Negative webhook handling: `payment_intent.payment_failed` cancels pending bookings and logs `PAYMENT_WEBHOOK_FAILED`.
+  - Payment Management Endpoints (`/api/v1/payments`):
+    - `POST /api/v1/payments/intent`: Create payment intent (idempotent via `Idempotency-Key` header).
+    - `POST /api/v1/payments/capture`: Capture authorized payment.
+    - `POST /api/v1/payments/refund`: Refund captured payment (idempotent).
+    - `GET /api/v1/payments`: Paginated list of payment records for the authenticated traveler.
+    - `GET /api/v1/payments/:id`: Get payment record details.
+    - `POST /api/v1/payments/webhook`: External payment provider webhook callback handler.
+  - Comprehensive automated tests in `apps/api/tests/payments.test.ts` (11 tests covering interface, endpoints, decline simulation, edge case 1 auto-refund, edge case 2 delayed webhook confirmation + itinerary auto-linking, and webhook failure handling).
 - **Module 4.6: Booking Orchestration / Itinerary Linking**:
   - Event Bus abstraction (`IEventBus`) and in-process implementation (`InProcessEventBus`) with strongly typed domain events (`DomainEvent<T>`), structured for zero-effort transition to distributed message queues (BullMQ/Redis/RabbitMQ).
   - Event-driven orchestration: Confirmation of a storage booking or direct transport booking emits `booking-confirmed` which triggers `BookingOrchestrator` to auto-insert or update corresponding `ItineraryItem` (`type: 'storage'` or `type: 'transport'`) on the linked trip.

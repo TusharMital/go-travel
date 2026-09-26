@@ -9,6 +9,7 @@ import { tripsRouter } from './modules/trips/trips.routes.js';
 import { locationRouter } from './modules/location/location.routes.js';
 import { storageRouter } from './modules/storage/storage.routes.js';
 import { transportRouter } from './modules/transport/transport.routes.js';
+import { paymentsRouter } from './modules/payments/payments.routes.js';
 import { initBookingOrchestrator } from './modules/orchestration/booking-orchestrator.js';
 
 export function createApp(): Application {
@@ -45,6 +46,7 @@ export function createApp(): Application {
   apiV1Router.use('/location', locationRouter);
   apiV1Router.use('/storage', storageRouter);
   apiV1Router.use('/transport', transportRouter);
+  apiV1Router.use('/payments', paymentsRouter);
 
   app.use('/api/v1', apiV1Router);
 

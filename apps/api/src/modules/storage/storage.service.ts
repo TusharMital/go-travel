@@ -3,6 +3,7 @@ import { AppError } from '../../middlewares/error.middleware.js';
 import { recordAuditEvent } from '../../middlewares/audit.middleware.js';
 import { getLocationProvider } from '../../adapters/location/index.js';
 import { getPaymentsAdapter } from '../../adapters/payments/index.js';
+import { paymentsService } from '../payments/payments.service.js';
 import {
   StorageBookingStatus,
   canTransitionStorageBooking,
@@ -355,115 +356,123 @@ export class StorageService {
     const pickUp = new Date(input.pick_up_at);
     const datesNeeded = this.getDatesInRange(dropOff, pickUp);
 
-    // 2. Concurrency-safe atomic transaction
-    const booking = await prisma.$transaction(async (tx) => {
-      let totalPrice = 0;
-
-      for (const dateStr of datesNeeded) {
-        const dateObj = new Date(`${dateStr}T00:00:00.000Z`);
-
-        // Check if inventory row exists; if not, create initial inventory
-        let inv = await tx.storageInventory.findUnique({
-          where: {
-            location_id_date: {
-              location_id: input.location_id,
-              date: dateObj,
-            },
+    // Calculate estimated total price upfront for payment capture
+    let estimatedTotalPrice = 0;
+    for (const dateStr of datesNeeded) {
+      const dateObj = new Date(`${dateStr}T00:00:00.000Z`);
+      const inv = await prisma.storageInventory.findUnique({
+        where: {
+          location_id_date: {
+            location_id: input.location_id,
+            date: dateObj,
           },
-        });
-
-        if (!inv) {
-          inv = await tx.storageInventory.create({
-            data: {
-              location_id: input.location_id,
-              date: dateObj,
-              total_capacity: 25,
-              booked_capacity: 0,
-              price_per_bag_per_day: 6.0,
-              version: 0,
-            },
-          });
-        }
-
-        // Capacity check
-        if (inv.total_capacity - inv.booked_capacity < input.bag_count) {
-          throw new AppError(
-            `Insufficient storage capacity on ${dateStr}. Available: ${inv.total_capacity - inv.booked_capacity}, requested: ${input.bag_count}`,
-            409,
-            'INSUFFICIENT_CAPACITY'
-          );
-        }
-
-        // Atomic check-and-decrement with optimistic versioning to guarantee concurrency safety
-        const updateResult = await tx.storageInventory.updateMany({
-          where: {
-            id: inv.id,
-            version: inv.version,
-            total_capacity: { gte: inv.booked_capacity + input.bag_count },
-          },
-          data: {
-            booked_capacity: { increment: input.bag_count },
-            version: { increment: 1 },
-          },
-        });
-
-        if (updateResult.count === 0) {
-          throw new AppError(
-            `Concurrent booking conflict on ${dateStr}. Please retry.`,
-            409,
-            'CONCURRENCY_CONFLICT'
-          );
-        }
-
-        totalPrice += Number(inv.price_per_bag_per_day) * input.bag_count;
-      }
-
-      // Create Booking record
-      const created = await tx.storageBooking.create({
-        data: {
-          user_id: userId,
-          location_id: input.location_id,
-          trip_id: input.trip_id || null,
-          status: StorageBookingStatus.CONFIRMED,
-          bag_count: input.bag_count,
-          drop_off_at: dropOff,
-          pick_up_at: pickUp,
-          price_total: totalPrice,
-          currency: input.currency || 'USD',
-          idempotency_key: idempotencyKey,
         },
-        include: { location: true },
       });
+      const pricePerBag = inv ? Number(inv.price_per_bag_per_day) : 6.0;
+      estimatedTotalPrice += pricePerBag * input.bag_count;
+    }
 
-      return created;
-    });
+    const isDelayedWebhook = input.test_flag === 'simulate_delayed_webhook';
+    const targetStatus = isDelayedWebhook ? StorageBookingStatus.PENDING : StorageBookingStatus.CONFIRMED;
 
-    // 3. Process payment through external adapter (Rule #2: always through interface)
-    const paymentsProvider = getPaymentsAdapter();
-    const paymentResult = await paymentsProvider.createPaymentIntent({
-      amount: Number(booking.price_total),
-      currency: booking.currency,
+    // 2. Process Payment FIRST -> Concurrency-safe Booking Creation -> Compensation Refund on Failure
+    const paymentResult = await paymentsService.executeBookingPayment({
       userId,
-      relatedType: 'STORAGE_BOOKING',
-      relatedId: booking.id,
+      amount: estimatedTotalPrice,
+      currency: input.currency || 'USD',
+      relatedType: 'storage_booking',
       idempotencyKey,
-    });
+      testFlag: input.test_flag,
+      isDelayedWebhook,
+      correlationId,
+      createBookingFn: async (paymentRef) => {
+        return await prisma.$transaction(async (tx) => {
+          let totalPrice = 0;
 
-    // Record Payment entity
-    await prisma.payment.create({
-      data: {
-        user_id: userId,
-        related_type: 'storage_booking',
-        related_id: booking.id,
-        status: 'captured',
-        amount: booking.price_total,
-        currency: booking.currency,
-        provider_ref: paymentResult.providerRef,
-        idempotency_key: idempotencyKey,
+          for (const dateStr of datesNeeded) {
+            const dateObj = new Date(`${dateStr}T00:00:00.000Z`);
+
+            // Check if inventory row exists; if not, create initial inventory
+            let inv = await tx.storageInventory.findUnique({
+              where: {
+                location_id_date: {
+                  location_id: input.location_id,
+                  date: dateObj,
+                },
+              },
+            });
+
+            if (!inv) {
+              inv = await tx.storageInventory.create({
+                data: {
+                  location_id: input.location_id,
+                  date: dateObj,
+                  total_capacity: 25,
+                  booked_capacity: 0,
+                  price_per_bag_per_day: 6.0,
+                  version: 0,
+                },
+              });
+            }
+
+            // Capacity check
+            if (inv.total_capacity - inv.booked_capacity < input.bag_count) {
+              throw new AppError(
+                `Insufficient storage capacity on ${dateStr}. Available: ${inv.total_capacity - inv.booked_capacity}, requested: ${input.bag_count}`,
+                409,
+                'INSUFFICIENT_CAPACITY'
+              );
+            }
+
+            // Atomic check-and-decrement with optimistic versioning to guarantee concurrency safety
+            const updateResult = await tx.storageInventory.updateMany({
+              where: {
+                id: inv.id,
+                version: inv.version,
+                total_capacity: { gte: inv.booked_capacity + input.bag_count },
+              },
+              data: {
+                booked_capacity: { increment: input.bag_count },
+                version: { increment: 1 },
+              },
+            });
+
+            if (updateResult.count === 0) {
+              throw new AppError(
+                `Concurrent booking conflict on ${dateStr}. Please retry.`,
+                409,
+                'CONCURRENCY_CONFLICT'
+              );
+            }
+
+            totalPrice += Number(inv.price_per_bag_per_day) * input.bag_count;
+          }
+
+          // Create Booking record
+          const created = await tx.storageBooking.create({
+            data: {
+              user_id: userId,
+              location_id: input.location_id,
+              trip_id: input.trip_id || null,
+              status: targetStatus,
+              bag_count: input.bag_count,
+              drop_off_at: dropOff,
+              pick_up_at: pickUp,
+              price_total: totalPrice,
+              currency: input.currency || 'USD',
+              idempotency_key: idempotencyKey,
+            },
+            include: { location: true },
+          });
+
+          return created;
+        });
       },
     });
 
-    // 4. Audit Event logging
+    const booking = paymentResult.booking;
+
+    // 3. Audit Event logging
     await recordAuditEvent({
       actorUserId: userId,
       action: 'STORAGE_BOOKING_CREATED',
@@ -474,30 +483,32 @@ export class StorageService {
       correlationId,
     });
 
-    // 5. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
-    await getEventBus().publish<BookingConfirmedPayload>({
-      id: randomUUID(),
-      name: BOOKING_CONFIRMED_EVENT,
-      timestamp: new Date().toISOString(),
-      correlationId,
-      payload: {
-        bookingType: 'storage',
-        bookingId: booking.id,
-        userId,
-        tripId: booking.trip_id,
-        status: booking.status,
-        startsAt: booking.drop_off_at,
-        endsAt: booking.pick_up_at,
-        title: `Luggage Storage: ${location.name} (${booking.bag_count} bags)`,
-        locationLat: location.lat,
-        locationLng: location.lng,
-        address: location.address,
-      },
-    });
+    // 4. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
+    if (booking.status === StorageBookingStatus.CONFIRMED) {
+      await getEventBus().publish<BookingConfirmedPayload>({
+        id: randomUUID(),
+        name: BOOKING_CONFIRMED_EVENT,
+        timestamp: new Date().toISOString(),
+        correlationId,
+        payload: {
+          bookingType: 'storage',
+          bookingId: booking.id,
+          userId,
+          tripId: booking.trip_id,
+          status: booking.status,
+          startsAt: booking.drop_off_at,
+          endsAt: booking.pick_up_at,
+          title: `Luggage Storage: ${location.name} (${booking.bag_count} bags)`,
+          locationLat: location.lat,
+          locationLng: location.lng,
+          address: location.address,
+        },
+      });
+    }
 
     return {
       ...booking,
-      payment: paymentResult,
+      payment: paymentResult.payment,
     };
   }
 
@@ -576,7 +587,7 @@ export class StorageService {
           where: { related_type: 'storage_booking', related_id: booking.id },
         });
         if (payment && payment.provider_ref) {
-          await getPaymentsAdapter().refundPayment(payment.provider_ref, Number(payment.amount));
+          await getPaymentsAdapter().refund(payment.provider_ref, Number(payment.amount));
           await tx.payment.update({
             where: { id: payment.id },
             data: { status: 'refunded' },

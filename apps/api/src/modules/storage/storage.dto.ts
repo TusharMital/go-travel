@@ -39,6 +39,7 @@ export const CreateStorageBookingDto = z
     drop_off_at: z.string().datetime({ message: 'drop_off_at must be an ISO datetime string' }),
     pick_up_at: z.string().datetime({ message: 'pick_up_at must be an ISO datetime string' }),
     currency: z.string().default('USD'),
+    test_flag: z.string().optional(),
   })
   .refine((data) => new Date(data.pick_up_at) >= new Date(data.drop_off_at), {
     message: 'pick_up_at must be on or after drop_off_at',

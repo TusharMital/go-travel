@@ -135,6 +135,177 @@ paths:
         '200':
           description: Logged out successfully
 
+  /payments/intent:
+    post:
+      summary: Create Payment Intent
+      description: Generates an external payment intent reference and client secret for checkout.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+                - related_type
+                - related_id
+              properties:
+                amount:
+                  type: number
+                  example: 25.0
+                currency:
+                  type: string
+                  default: USD
+                related_type:
+                  type: string
+                  enum: [storage_booking, transport_booking]
+                related_id:
+                  type: string
+                test_flag:
+                  type: string
+                  enum: [simulate_decline, simulate_delayed_webhook]
+      responses:
+        '201':
+          description: Payment intent created
+        '402':
+          description: Payment declined
+
+  /payments/capture:
+    post:
+      summary: Capture Authorized Payment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider_ref
+              properties:
+                provider_ref:
+                  type: string
+                amount:
+                  type: number
+      responses:
+        '200':
+          description: Payment captured successfully
+        '402':
+          description: Payment capture failed
+
+  /payments/refund:
+    post:
+      summary: Refund Captured Payment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                payment_id:
+                  type: string
+                  format: uuid
+                provider_ref:
+                  type: string
+                amount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Payment refunded successfully
+
+  /payments:
+    get:
+      summary: List Traveler Payments
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: related_type
+          schema:
+            type: string
+            enum: [storage_booking, transport_booking]
+      responses:
+        '200':
+          description: Paginated payment history
+
+  /payments/{id}:
+    get:
+      summary: Get Payment Record
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment record details
+
+  /payments/webhook:
+    post:
+      summary: Payment Provider Webhook Handler
+      description: Ingests callbacks from external payment gateways (Stripe/Mock) to reconcile delayed authorizations, captures, and charge failures.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - data
+              properties:
+                event:
+                  type: string
+                  example: payment_intent.succeeded
+                data:
+                  type: object
+                  required:
+                    - provider_ref
+                  properties:
+                    provider_ref:
+                      type: string
+                    amount:
+                      type: number
+                    currency:
+                      type: string
+      responses:
+        '200':
+          description: Webhook event processed
+
 components:
   securitySchemes:
     bearerAuth:
@@ -170,3 +341,38 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        related_type:
+          type: string
+          enum: [storage_booking, transport_booking]
+        related_id:
+          type: string
+        status:
+          type: string
+          enum: [intent, authorized, captured, refunded, failed]
+        amount:
+          type: number
+          example: 25.00
+        currency:
+          type: string
+          example: USD
+        provider_ref:
+          type: string
+        idempotency_key:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+

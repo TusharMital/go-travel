@@ -4,6 +4,7 @@ import { recordAuditEvent } from '../../middlewares/audit.middleware.js';
 import { getTransportAdapter } from '../../adapters/transport/index.js';
 import { getLocationProvider } from '../../adapters/location/index.js';
 import { getPaymentsAdapter } from '../../adapters/payments/index.js';
+import { paymentsService } from '../payments/payments.service.js';
 import {
   TransportBookingStatus,
   TransportMode,
@@ -216,51 +217,43 @@ export class TransportService {
       });
     }
 
-    // 4. Create Booking & Process Payment Transaction
-    const booking = await prisma.$transaction(async (tx) => {
-      const created = await tx.transportBooking.create({
-        data: {
-          user_id: userId,
-          transport_option_id: option.id,
-          trip_id: input.trip_id || null,
-          status: TransportBookingStatus.CONFIRMED,
-          scheduled_at: new Date(input.scheduled_at),
-          price_total: option.estimated_price,
-          currency: input.currency || 'USD',
-          idempotency_key: idempotencyKey,
-        },
-        include: { transport_option: true },
-      });
+    const isDelayedWebhook = input.test_flag === 'simulate_delayed_webhook';
+    const targetStatus = isDelayedWebhook ? TransportBookingStatus.PENDING : TransportBookingStatus.CONFIRMED;
 
-      return created;
-    });
-
-    // 5. Payment through external adapter
-    const paymentsProvider = getPaymentsAdapter();
-    const paymentResult = await paymentsProvider.createPaymentIntent({
-      amount: Number(booking.price_total),
-      currency: booking.currency,
+    // 4. Process Payment FIRST -> Booking Creation -> Compensation Refund on Failure
+    const paymentResult = await paymentsService.executeBookingPayment({
       userId,
-      relatedType: 'TRANSPORT_BOOKING',
-      relatedId: booking.id,
+      amount: Number(option.estimated_price),
+      currency: input.currency || option.currency || 'USD',
+      relatedType: 'transport_booking',
       idempotencyKey,
-    });
+      testFlag: input.test_flag,
+      isDelayedWebhook,
+      correlationId,
+      createBookingFn: async (paymentRef) => {
+        return await prisma.$transaction(async (tx) => {
+          const created = await tx.transportBooking.create({
+            data: {
+              user_id: userId,
+              transport_option_id: option!.id,
+              trip_id: input.trip_id || null,
+              status: targetStatus,
+              scheduled_at: new Date(input.scheduled_at),
+              price_total: option!.estimated_price,
+              currency: input.currency || 'USD',
+              idempotency_key: idempotencyKey,
+            },
+            include: { transport_option: true },
+          });
 
-    // Record Payment
-    await prisma.payment.create({
-      data: {
-        user_id: userId,
-        related_type: 'transport_booking',
-        related_id: booking.id,
-        status: 'captured',
-        amount: booking.price_total,
-        currency: booking.currency,
-        provider_ref: paymentResult.providerRef,
-        idempotency_key: idempotencyKey,
+          return created;
+        });
       },
     });
 
-    // 6. Audit Trail
+    const booking = paymentResult.booking;
+
+    // 5. Audit Trail
     await recordAuditEvent({
       actorUserId: userId,
       action: 'TRANSPORT_BOOKING_CREATED',
@@ -271,41 +264,43 @@ export class TransportService {
       correlationId,
     });
 
-    // 7. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
-    const durationMin = option.estimated_duration_min || 30;
-    const endsAt = new Date(booking.scheduled_at.getTime() + durationMin * 60000);
-    const providerName =
-      option.provider?.name ||
-      (option.mode === TransportMode.TRANSIT ? 'City Public Transit' : 'Partner Taxi');
+    // 6. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
+    if (booking.status === TransportBookingStatus.CONFIRMED) {
+      const durationMin = option.estimated_duration_min || 30;
+      const endsAt = new Date(booking.scheduled_at.getTime() + durationMin * 60000);
+      const providerName =
+        option.provider?.name ||
+        (option.mode === TransportMode.TRANSIT ? 'City Public Transit' : 'Partner Taxi');
 
-    await getEventBus().publish<BookingConfirmedPayload>({
-      id: randomUUID(),
-      name: BOOKING_CONFIRMED_EVENT,
-      timestamp: new Date().toISOString(),
-      correlationId,
-      payload: {
-        bookingType: 'transport',
-        bookingId: booking.id,
-        userId,
-        tripId: booking.trip_id,
-        status: booking.status,
-        startsAt: booking.scheduled_at,
-        endsAt,
-        title: `Transfer: ${providerName} (${option.mode})`,
-        locationLat: option.origin_lat ?? null,
-        locationLng: option.origin_lng ?? null,
-        address:
-          input.notes ||
-          (option.origin_lat != null && option.origin_lng != null
-            ? `Pick-up from ${option.origin_lat.toFixed(4)}, ${option.origin_lng.toFixed(4)}`
-            : 'Pick-up point'),
-      },
-    });
+      await getEventBus().publish<BookingConfirmedPayload>({
+        id: randomUUID(),
+        name: BOOKING_CONFIRMED_EVENT,
+        timestamp: new Date().toISOString(),
+        correlationId,
+        payload: {
+          bookingType: 'transport',
+          bookingId: booking.id,
+          userId,
+          tripId: booking.trip_id,
+          status: booking.status,
+          startsAt: booking.scheduled_at,
+          endsAt,
+          title: `Transfer: ${providerName} (${option.mode})`,
+          locationLat: option.origin_lat ?? null,
+          locationLng: option.origin_lng ?? null,
+          address:
+            input.notes ||
+            (option.origin_lat != null && option.origin_lng != null
+              ? `Pick-up from ${option.origin_lat.toFixed(4)}, ${option.origin_lng.toFixed(4)}`
+              : 'Pick-up point'),
+        },
+      });
+    }
 
     return {
       handoff: false,
       booking,
-      payment: paymentResult,
+      payment: paymentResult.payment,
     };
   }
 
@@ -363,7 +358,7 @@ export class TransportService {
         where: { related_type: 'transport_booking', related_id: booking.id },
       });
       if (payment && payment.provider_ref) {
-        await getPaymentsAdapter().refundPayment(payment.provider_ref, Number(payment.amount));
+        await getPaymentsAdapter().refund(payment.provider_ref, Number(payment.amount));
         await tx.payment.update({
           where: { id: payment.id },
           data: { status: 'refunded' },
