@@ -65,3 +65,14 @@ npm run db:migrate    # Apply migrations
 npm run db:seed       # Seed database with realistic demo data
 npm run db:studio     # Launch Prisma Studio GUI
 ```
+
+---
+
+## Acceptance Checklist (Run after each module)
+
+- [ ] **End-to-End UI Happy Path**: Can I do the happy path end-to-end through the UI, not just via API calls?
+- [ ] **Concurrency & Idempotency Safety**: Does a concurrent/duplicate request fail safely instead of double-booking or double-charging?
+- [ ] **Audit Trail Integrity**: Is there an audit trail entry for every state change tested?
+- [ ] **Negative-Path Tests**: Do negative-path tests (invalid input, wrong role, expired session, capacity=0) exist and pass?
+- [ ] **Clean Migration & Seed Stability**: Does the module still work after running `npm run db:migrate` from a clean database + seed?
+
