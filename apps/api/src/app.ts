@@ -10,11 +10,19 @@ import { locationRouter } from './modules/location/location.routes.js';
 import { storageRouter } from './modules/storage/storage.routes.js';
 import { transportRouter } from './modules/transport/transport.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
+import { notificationsRouter, partnersRouter } from './modules/notifications/notifications.routes.js';
 import { initBookingOrchestrator } from './modules/orchestration/booking-orchestrator.js';
+import { initNotificationOrchestrator } from './modules/notifications/notification-orchestrator.js';
+import { pickupReminderScheduler } from './modules/notifications/pickup-reminder.scheduler.js';
 
 export function createApp(): Application {
   // Initialize domain event orchestrators
   initBookingOrchestrator();
+  initNotificationOrchestrator();
+
+  if (process.env.NODE_ENV !== 'test') {
+    pickupReminderScheduler.startScheduler();
+  }
 
   const app = express();
 
@@ -47,6 +55,8 @@ export function createApp(): Application {
   apiV1Router.use('/storage', storageRouter);
   apiV1Router.use('/transport', transportRouter);
   apiV1Router.use('/payments', paymentsRouter);
+  apiV1Router.use('/notifications', notificationsRouter);
+  apiV1Router.use('/partners', partnersRouter);
 
   app.use('/api/v1', apiV1Router);
 

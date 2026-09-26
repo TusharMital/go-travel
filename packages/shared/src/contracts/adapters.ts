@@ -115,23 +115,27 @@ export interface NotificationPayload {
   toUserId: string;
   recipientEmail?: string;
   recipientPhone?: string;
-  channel: 'EMAIL' | 'SMS' | 'PUSH' | 'IN_APP';
+  channel: 'email' | 'sms' | 'push' | 'in_app' | 'EMAIL' | 'SMS' | 'PUSH' | 'IN_APP';
   template: string;
+  subject?: string;
+  content?: string;
   data: Record<string, unknown>;
 }
 
 export interface NotificationResult {
   notificationId: string;
   channel: string;
-  status: 'SENT' | 'PENDING' | 'FAILED';
+  status: 'SENT' | 'PENDING' | 'FAILED' | 'sent' | 'pending' | 'failed';
   dispatchedAt: Date;
   providerMessageId?: string;
 }
 
-export interface INotificationsProvider {
+export interface NotificationProvider {
   name: string;
   send(payload: NotificationPayload): Promise<NotificationResult>;
 }
+
+export type INotificationsProvider = NotificationProvider;
 
 export interface TransitRouteStep {
   instruction: string;

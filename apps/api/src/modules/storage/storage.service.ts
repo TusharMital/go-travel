@@ -624,6 +624,8 @@ export class StorageService {
           bookingId,
           userId,
           tripId: updated.trip_id,
+          title: `Luggage Storage: ${booking.location.name}`,
+          cancellationReason: cancellationReason || 'Customer requested',
         },
       });
     }

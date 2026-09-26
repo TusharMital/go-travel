@@ -392,6 +392,8 @@ export class TransportService {
         bookingId,
         userId,
         tripId: updated.trip_id,
+        title: `Transfer (${booking.transport_option?.mode || 'Taxi'})`,
+        cancellationReason: reason || 'Customer requested',
       },
     });
 

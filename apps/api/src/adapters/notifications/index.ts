@@ -1,7 +1,14 @@
-import { INotificationsProvider } from '@travel/shared';
-import { ConsoleNotificationsAdapter } from './console-notifications.adapter.js';
+import { NotificationProvider } from '@travel/shared';
+import {
+  ConsoleNotificationsAdapter,
+  consoleNotificationsAdapter,
+} from './console-notifications.adapter.js';
 
-export function getNotificationsAdapter(): INotificationsProvider {
-  // Swappable with SendGrid / Twilio / FCM adapter
-  return new ConsoleNotificationsAdapter();
+export function getNotificationProvider(): NotificationProvider {
+  // Swappable with SendGrid / Twilio / FCM / Push adapter
+  return consoleNotificationsAdapter;
 }
+
+export const getNotificationsAdapter = getNotificationProvider;
+
+export { ConsoleNotificationsAdapter, consoleNotificationsAdapter };

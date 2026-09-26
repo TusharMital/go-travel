@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { api } from './api/client';
 import { Navbar } from './components/Navbar';
 import { AuthModal, AuthMode } from './components/AuthModal';
 import { TripList } from './components/TripList';
@@ -36,9 +37,29 @@ function Dashboard() {
   const [storageSearchCoords, setStorageSearchCoords] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [transportSearchOrigin, setTransportSearchOrigin] = useState<{ lat: number; lng: number; label?: string } | undefined>(undefined);
 
+  const [partnerIdInput, setPartnerIdInput] = useState('partner-acc-1');
+  const [partnerStatusInput, setPartnerStatusInput] = useState<'pending' | 'verified' | 'suspended'>('verified');
+  const [partnerNotesInput, setPartnerNotesInput] = useState('All compliance documents and IDs verified.');
+  const [partnerStatusMsg, setPartnerStatusMsg] = useState<string | null>(null);
+  const [partnerStatusLoading, setPartnerStatusLoading] = useState(false);
+
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
     setAuthModalOpen(true);
+  };
+
+  const handleUpdatePartnerStatus = async () => {
+    try {
+      setPartnerStatusLoading(true);
+      setPartnerStatusMsg(null);
+      const res = await api.updatePartnerStatus(partnerIdInput, partnerStatusInput, partnerNotesInput);
+      setPartnerStatusMsg(`Status transitioned to ${partnerStatusInput.toUpperCase()}! Notification sent.`);
+    } catch (err: any) {
+      setPartnerStatusMsg(`Failed: ${err.message}`);
+    } finally {
+      setPartnerStatusLoading(false);
+      setTimeout(() => setPartnerStatusMsg(null), 5000);
+    }
   };
 
   const handleSendVerification = async () => {
@@ -325,6 +346,100 @@ function Dashboard() {
                     )}
                   </div>
                 )}
+
+                {/* Module 4.8 Partner Status & Notification Sandbox */}
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-sm space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
+                          <Shield className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-white">
+                            Partner Status Change Trigger (Module 4.8)
+                          </h4>
+                          <p className="text-xs text-slate-300">
+                            Updates partner verification status, logs audit event, and dispatches data-driven <code className="font-mono text-indigo-300">PARTNER_STATUS_CHANGED</code> notification.
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono uppercase bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30">
+                        Admin / Dev Action
+                      </span>
+                    </div>
+
+                    {partnerStatusMsg && (
+                      <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span>{partnerStatusMsg}</span>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          Partner Account ID
+                        </label>
+                        <input
+                          type="text"
+                          value={partnerIdInput}
+                          onChange={(e) => setPartnerIdInput(e.target.value)}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                          placeholder="partner-acc-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          New Status
+                        </label>
+                        <select
+                          value={partnerStatusInput}
+                          onChange={(e) => setPartnerStatusInput(e.target.value as any)}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          <option value="verified">Verified (Approved)</option>
+                          <option value="pending">Pending Review</option>
+                          <option value="suspended">Suspended</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                          Verification Notes
+                        </label>
+                        <input
+                          type="text"
+                          value={partnerNotesInput}
+                          onChange={(e) => setPartnerNotesInput(e.target.value)}
+                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          placeholder="e.g. Identity and insurance verified"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-[11px] text-slate-400">
+                        Check the notification bell in the top navbar to see the rendered notification.
+                      </p>
+                      <button
+                        onClick={handleUpdatePartnerStatus}
+                        disabled={partnerStatusLoading}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5"
+                      >
+                        {partnerStatusLoading ? (
+                          <span>Updating...</span>
+                        ) : (
+                          <>
+                            <Shield className="w-3.5 h-3.5" />
+                            <span>Update & Trigger Notification</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

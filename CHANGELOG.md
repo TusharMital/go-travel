@@ -8,6 +8,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.8: Notifications**:
+  - `NotificationProvider` interface (`INotificationsProvider`) in `@travel/shared` defining `send(payload: NotificationPayload): Promise<NotificationResult>`.
+  - `ConsoleNotificationsAdapter` dev/test implementation logging channel, recipient, subject, rendered text, and metadata to console/logs, with in-memory delivery tracking and simulation flags.
+  - Data-Driven Template Engine (`TemplateRegistry`):
+    - Stored templates with channel-specific variations (`email`, `sms`, `push`) and dynamic variable interpolation (`{{varName}}`), completely eliminating hardcoded strings scattered in code.
+    - Pre-configured templates:
+      1. `BOOKING_CONFIRMED`: Luggage and transit booking confirmations with passcodes and scheduled pickup windows.
+      2. `BOOKING_CANCELLED`: Cancellation alerts with reason details and refund notices.
+      3. `PICKUP_REMINDER_1H`: 1-hour luggage pickup window approaching reminders.
+      4. `PARTNER_STATUS_CHANGED`: Partner verification status transitions (`verified`, `pending`, `suspended`) with notes.
+  - 4 Key Triggers Implemented:
+    1. **Booking Confirmed**: Triggered automatically via `NotificationOrchestrator` subscribing to `booking-confirmed` events.
+    2. **Booking Cancelled**: Triggered automatically on storage and transport reservation cancellations via `booking-cancelled` events.
+    3. **1-Hour-Before Pickup Reminder**: Scheduled job (`PickupReminderScheduler`) querying drop-offs within the 45-75 minute window, dispatched via cron and manual trigger endpoint `POST /api/v1/notifications/jobs/pickup-reminders`, with strict duplicate reminder prevention.
+    4. **Partner Status Changed**: Admin endpoint `PATCH /api/v1/partners/:id/status` updating partner and provider verification states, logging audit events, and dispatching account update notifications.
+  - In-App Notification REST Endpoints:
+    - `GET /api/v1/notifications`: Paginated in-app notifications with unread filtering.
+    - `PATCH /api/v1/notifications/:id/read`: Mark notification as read/delivered.
+    - `POST /api/v1/notifications`: Internal/admin notification dispatch.
+    - `POST /api/v1/notifications/jobs/pickup-reminders`: Manual/cron trigger for pickup reminder background job.
+    - `PATCH /api/v1/partners/:id/status`: Admin partner status transition.
+  - Frontend Notification Experience (`@travel/web`):
+    - `NotificationsPopover` in top navigation bar with unread count badge, channel pills (SMS, Push, Email), template tags, and mark-read action.
+    - Interactive 1-hour pickup reminder scheduled job trigger button directly in popover.
+    - Admin Partner Verification & Status Transition sandbox in Workbench tab for instant live testing.
+  - Comprehensive Test Suite:
+    - 12 automated tests in `apps/api/tests/notifications.test.ts` covering data-driven templates, variable interpolation, missing variable fallback, console adapter, all 4 triggers, duplicate alert prevention, and role-based permissions (total 111 tests passing across 8 suites).
 - **Module 4.7: Payments**:
   - `PaymentProvider` interface in `@travel/shared` defining `createIntent`, `capture`, `refund` along with strongly typed results (`PaymentIntentResult`, `PaymentResult`, `RefundResult`).
   - `MockPaymentsAdapter` implementing `PaymentProvider` with full test simulation support: card decline simulation via `test_flag: 'simulate_decline'`, capture failure simulation, and delayed webhook simulation.

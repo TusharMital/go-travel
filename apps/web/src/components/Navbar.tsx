@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Compass, ShieldCheck, User as UserIcon, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import { NotificationsPopover } from './NotificationsPopover';
 
 interface NavbarProps {
   onOpenAuth: (view: 'login' | 'register') => void;
@@ -129,6 +130,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               {getRoleBadge(user.role)}
+
+              <NotificationsPopover />
 
               <button
                 onClick={logout}

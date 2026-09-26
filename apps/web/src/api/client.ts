@@ -300,6 +300,64 @@ let demoStorageBookings = [
   },
 ];
 
+let demoNotifications: any[] = [
+  {
+    id: 'notif-demo-1',
+    user_id: 'u-demo-1',
+    channel: 'push',
+    template: 'PICKUP_REMINDER_1H',
+    title: 'Reminder: 1 hour until luggage pickup!',
+    content: 'Hi Alice Smith, your luggage pickup at Alexanderplatz Luggage Hub is in 1 hour. Please head to the location with your pass.',
+    payload: {
+      userName: 'Alice Smith',
+      title: 'Alexanderplatz Luggage Hub',
+      scheduledTime: '18:00 UTC',
+      pickupPassCode: 'PASS-8921',
+      bookingId: 'sb-demo-1',
+    },
+    status: 'sent',
+    created_at: new Date(Date.now() - 15 * 60000).toISOString(),
+    sent_at: new Date(Date.now() - 15 * 60000).toISOString(),
+  },
+  {
+    id: 'notif-demo-2',
+    user_id: 'u-demo-1',
+    channel: 'email',
+    template: 'BOOKING_CONFIRMED',
+    title: 'Booking Confirmed - Alexanderplatz Luggage Hub',
+    content: 'Hello Alice Smith, your booking for Alexanderplatz Luggage Hub has been successfully confirmed. Ref: DEMO-7721.',
+    payload: {
+      userName: 'Alice Smith',
+      title: 'Alexanderplatz Luggage Hub',
+      reference: 'DEMO-7721',
+      bookingId: 'sb-demo-1',
+      scheduledTime: '10:00 UTC',
+    },
+    status: 'sent',
+    created_at: new Date(Date.now() - 120 * 60000).toISOString(),
+    sent_at: new Date(Date.now() - 120 * 60000).toISOString(),
+  },
+  {
+    id: 'notif-demo-3',
+    user_id: 'u-demo-1',
+    channel: 'email',
+    template: 'PARTNER_STATUS_CHANGED',
+    title: 'Partner Account Status: VERIFIED',
+    content: 'Dear Berlin SafeStorage GmbH, your partner account status has been updated to VERIFIED. Business license verified.',
+    payload: {
+      partnerName: 'Alice Smith',
+      businessName: 'Berlin SafeStorage GmbH',
+      partnerType: 'STORAGE',
+      oldStatus: 'PENDING',
+      newStatus: 'VERIFIED',
+      notes: 'All compliance documents verified.',
+    },
+    status: 'delivered',
+    created_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    sent_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+  },
+];
+
 class ApiClient {
   private getAccessToken(): string | null {
     return localStorage.getItem('travel_access_token');
@@ -604,7 +662,26 @@ class ApiClient {
         const parts = endpoint.split('/');
         const bookingId = parts[3];
         const b = demoStorageBookings.find((x) => x.id === bookingId);
-        if (b) b.status = 'cancelled';
+        if (b) {
+          b.status = 'cancelled';
+          demoNotifications.unshift({
+            id: `notif-${Date.now()}`,
+            user_id: 'u-demo-1',
+            channel: 'email',
+            template: 'BOOKING_CANCELLED',
+            title: `Booking Cancelled - ${b?.location?.name || 'Storage'}`,
+            content: `Your luggage storage booking for ${b?.location?.name || 'Storage'} has been cancelled.`,
+            payload: {
+              userName: 'Alice Smith',
+              title: b?.location?.name || 'Luggage Storage',
+              bookingId,
+              cancellationReason: 'Requested by user',
+            },
+            status: 'sent',
+            created_at: new Date().toISOString(),
+            sent_at: new Date().toISOString(),
+          });
+        }
         demoTrips.forEach((t) => {
           t.itinerary_items = t.itinerary_items.filter(
             (item: any) => item.linked_storage_booking_id !== bookingId
@@ -633,6 +710,25 @@ class ApiClient {
           location: loc,
         };
         demoStorageBookings.unshift(newBooking);
+
+        demoNotifications.unshift({
+          id: `notif-${Date.now()}`,
+          user_id: 'u-demo-1',
+          channel: 'email',
+          template: 'BOOKING_CONFIRMED',
+          title: `Booking Confirmed - ${loc.name}`,
+          content: `Hello Alice Smith, your booking for ${loc.name} has been successfully confirmed. Ref: ${newBooking.id.slice(0, 8)}.`,
+          payload: {
+            userName: 'Alice Smith',
+            title: loc.name,
+            reference: newBooking.id.slice(0, 8),
+            bookingId: newBooking.id,
+            scheduledTime: newBooking.drop_off_at,
+          },
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          sent_at: new Date().toISOString(),
+        });
 
         if (body.trip_id) {
           const trip = demoTrips.find((t) => t.id === body.trip_id);
@@ -693,7 +789,26 @@ class ApiClient {
         const parts = endpoint.split('/');
         const bookingId = parts[3];
         const b = demoTransportBookings.find((x) => x.id === bookingId);
-        if (b) b.status = 'cancelled';
+        if (b) {
+          b.status = 'cancelled';
+          demoNotifications.unshift({
+            id: `notif-${Date.now()}`,
+            user_id: 'u-demo-1',
+            channel: 'sms',
+            template: 'BOOKING_CANCELLED',
+            title: 'Ride Cancelled',
+            content: `Your transfer booking ${bookingId.slice(0, 8)} has been cancelled.`,
+            payload: {
+              userName: 'Alice Smith',
+              title: 'City Transfer',
+              bookingId,
+              cancellationReason: 'Requested by user',
+            },
+            status: 'sent',
+            created_at: new Date().toISOString(),
+            sent_at: new Date().toISOString(),
+          });
+        }
         demoTrips.forEach((t) => {
           t.itinerary_items = t.itinerary_items.filter(
             (item: any) => item.linked_transport_booking_id !== bookingId
@@ -722,6 +837,25 @@ class ApiClient {
           },
         };
         demoTransportBookings.unshift(newBooking);
+
+        demoNotifications.unshift({
+          id: `notif-${Date.now()}`,
+          user_id: 'u-demo-1',
+          channel: 'sms',
+          template: 'BOOKING_CONFIRMED',
+          title: `Ride Confirmed - ${opt.provider_name}`,
+          content: `Your ride with ${opt.provider_name} has been confirmed. Ref: ${newBooking.id.slice(0, 8)}.`,
+          payload: {
+            userName: 'Alice Smith',
+            title: opt.provider_name,
+            reference: newBooking.id.slice(0, 8),
+            bookingId: newBooking.id,
+            scheduledTime: newBooking.scheduled_at,
+          },
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          sent_at: new Date().toISOString(),
+        });
 
         if (body.trip_id) {
           const trip = demoTrips.find((t) => t.id === body.trip_id);
@@ -753,6 +887,92 @@ class ApiClient {
       return {
         data: demoTransportBookings,
         meta: { total: demoTransportBookings.length, page: 1, limit: 20, totalPages: 1 },
+      } as unknown as T;
+    }
+
+    // Notifications mock fallback
+    if (endpoint.startsWith('/notifications')) {
+      if (endpoint.includes('/jobs/pickup-reminders') && options.method === 'POST') {
+        const reminderNotif = {
+          id: `notif-${Date.now()}`,
+          user_id: 'u-demo-1',
+          channel: 'push',
+          template: 'PICKUP_REMINDER_1H',
+          title: 'Reminder: 1 hour until luggage pickup!',
+          content: 'Hi Alice Smith, your pickup at Alexanderplatz Luggage Hub is scheduled in 1 hour. Please pick up on time.',
+          payload: {
+            userName: 'Alice Smith',
+            title: 'Alexanderplatz Luggage Hub',
+            scheduledTime: new Date(Date.now() + 3600000).toISOString(),
+            pickupPassCode: 'PASS-' + Math.floor(1000 + Math.random() * 9000),
+            bookingId: demoStorageBookings[0]?.id || 'sb-demo-1',
+          },
+          status: 'sent',
+          created_at: new Date().toISOString(),
+          sent_at: new Date().toISOString(),
+        };
+        demoNotifications.unshift(reminderNotif);
+        return {
+          message: 'Pickup reminders job executed successfully.',
+          windowStart: new Date(Date.now() + 45 * 60000).toISOString(),
+          windowEnd: new Date(Date.now() + 75 * 60000).toISOString(),
+          processedCount: 1,
+          remindersDispatched: 1,
+        } as unknown as T;
+      }
+
+      if (endpoint.includes('/read') && options.method === 'PATCH') {
+        const parts = endpoint.split('/');
+        const notifId = parts[2];
+        const notif = demoNotifications.find((n) => n.id === notifId);
+        if (notif) {
+          notif.status = 'delivered';
+          notif.read_at = new Date().toISOString();
+        }
+        return (notif || { id: notifId, status: 'delivered' }) as unknown as T;
+      }
+
+      const url = new URL(`http://localhost${endpoint}`);
+      const unreadOnly = url.searchParams.get('unreadOnly') === 'true';
+      let items = [...demoNotifications];
+      if (unreadOnly) {
+        items = items.filter((n) => n.status !== 'delivered');
+      }
+
+      return {
+        data: items,
+        meta: { total: items.length, page: 1, limit: 20, totalPages: 1 },
+      } as unknown as T;
+    }
+
+    // Partner status change mock fallback
+    if (endpoint.includes('/partners') && endpoint.includes('/status') && options.method === 'PATCH') {
+      const body = JSON.parse((options.body as string) || '{}');
+      const partnerNotif = {
+        id: `notif-${Date.now()}`,
+        user_id: 'u-demo-1',
+        channel: 'email',
+        template: 'PARTNER_STATUS_CHANGED',
+        title: `Partner Account Status: ${body.status || 'VERIFIED'}`,
+        content: `Dear Partner, your partner account verification status was updated to ${body.status || 'VERIFIED'}. ${body.notes || ''}`,
+        payload: {
+          partnerName: 'Alice Smith',
+          businessName: 'Berlin SafeStorage GmbH',
+          partnerType: 'STORAGE',
+          oldStatus: 'PENDING',
+          newStatus: body.status || 'VERIFIED',
+          notes: body.notes || 'Verified by system administrator.',
+        },
+        status: 'sent',
+        created_at: new Date().toISOString(),
+        sent_at: new Date().toISOString(),
+      };
+      demoNotifications.unshift(partnerNotif);
+      return {
+        id: 'partner-acc-1',
+        status: body.status,
+        notes: body.notes,
+        notificationDispatched: true,
       } as unknown as T;
     }
 
@@ -829,6 +1049,31 @@ class ApiClient {
     return this.request(`/transport/bookings/${id}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
+    });
+  }
+
+  async listMyNotifications(page = 1, limit = 20, unreadOnly = false): Promise<any> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (unreadOnly) params.append('unreadOnly', 'true');
+    return this.request(`/notifications?${params.toString()}`);
+  }
+
+  async markNotificationAsRead(id: string): Promise<any> {
+    return this.request(`/notifications/${id}/read`, {
+      method: 'PATCH',
+    });
+  }
+
+  async triggerPickupRemindersJob(): Promise<any> {
+    return this.request('/notifications/jobs/pickup-reminders', {
+      method: 'POST',
+    });
+  }
+
+  async updatePartnerStatus(partnerId: string, status: string, notes?: string): Promise<any> {
+    return this.request(`/partners/${partnerId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, notes }),
     });
   }
 }
