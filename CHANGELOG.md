@@ -8,6 +8,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.9: Partner Portal**:
+  - Separate frontend web application in `@travel/partner-portal` (port 3001) for luggage storage and transport operators, fully integrated with `@travel/web` (port 3000):
+    - **Step 1: Partner Onboarding Form** (`OnboardingForm.tsx`): Form capturing legal business entity, partner type (`storage`, `transport`, `both`), contact details, city, operating address, tax registration, and automated bank payout IBAN details.
+    - **Step 2: Pending Verification Review Screen** (`PendingVerification.tsx`): Application timeline, review status explanation, submission details summary, and 1-click "Simulate Admin Approval" evaluation action.
+    - **Step 3: (After Admin Approval) Active Operations Dashboard**:
+      - **Locations & Inventory Tab** (`LocationsInventoryTab.tsx`): Active locations list, capacity metrics, "Add New Location" modal with automatic 14-day seeded inventory, and "Set Capacity & Price" modal for daily inventory and pricing updates.
+      - **Bookings Management Tab** (`BookingsManagementTab.tsx`): Partner bookings table with status filters (`all`, `confirmed`, `checked_in`, `checked_out`, `cancelled`), customer contacts, bag count, drop-off/pick-up schedule, and live operational buttons to mark **Checked-In** and **Checked-Out**.
+      - **Payout Summary Tab** (`PayoutSummaryTab.tsx`): Gross booking revenue, platform commission deduction (15%), net earnings, available balance, pending clearance, connected bank account details, "Request Immediate Payout" action, and electronic settlement history table (stubbed).
+    - **Interactive Scenario Switcher**: In-navbar switcher allowing instant 1-click toggle between `Verified Storage Partner`, `Pending Verification Application`, and `New Onboarding Application` states.
+  - Backend Partner Operations API (`apps/api/src/modules/partners/`):
+    - `GET /api/v1/partners/me`: Partner account profile, provider details, and verification status.
+    - `POST /api/v1/partners/onboard`: Submit onboarding application (creates `PartnerAccount` in `pending` status, links `StorageProvider`/`TransportProvider`, promotes user role to `partner_storage`/`partner_transport`, and records audit event `PARTNER_ONBOARDING_SUBMITTED`).
+    - `GET /api/v1/partners/locations`: List locations for verified storage partner.
+    - `POST /api/v1/partners/locations`: Create storage location with seeded 14-day daily inventory records.
+    - `POST /api/v1/partners/locations/:id/inventory`: Update inventory capacity and price per bag for a given date with concurrency version tracking.
+    - `GET /api/v1/partners/bookings`: Paginated bookings for partner locations/routes.
+    - `PATCH /api/v1/partners/bookings/:id/check-in`: Transitions booking from `confirmed` $\rightarrow$ `checked_in` with role verification and audit event `STORAGE_BOOKING_CHECKED_IN`.
+    - `PATCH /api/v1/partners/bookings/:id/check-out`: Transitions booking from `checked_in` $\rightarrow$ `checked_out` with role verification and audit event `STORAGE_BOOKING_CHECKED_OUT`.
+    - `GET /api/v1/partners/payouts/summary`: Calculates gross sales, 15% platform commission, net earnings, available payout, and stubbed electronic settlements.
+    - `POST /api/v1/partners/payouts/request`: Requests immediate payout with threshold validation ($20 minimum) and audit event `PARTNER_PAYOUT_REQUESTED`.
+    - `PATCH /api/v1/partners/:id/status`: Admin approval endpoint with audit event `PARTNER_STATUS_CHANGED` and automated data-driven notification dispatch.
+  - Comprehensive Test Suite:
+    - 16 new automated unit and integration tests in `apps/api/tests/partners.test.ts` covering onboarding, validation failures, pending verification gate (403), admin approval, location/inventory management, check-in, check-out, unauthorized access rejection, invalid state transitions, and payout calculations (127 total tests passing across 9 test suites).
+  - OpenAPI 3.0.3 Specification:
+    - Updated `openapi.yaml` documenting all 9 partner management endpoints.
 - **Module 4.8: Notifications**:
   - `NotificationProvider` interface (`INotificationsProvider`) in `@travel/shared` defining `send(payload: NotificationPayload): Promise<NotificationResult>`.
   - `ConsoleNotificationsAdapter` dev/test implementation logging channel, recipient, subject, rendered text, and metadata to console/logs, with in-memory delivery tracking and simulation flags.

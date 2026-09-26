@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Compass, ShieldCheck, User as UserIcon, LogOut, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Compass, ShieldCheck, User as UserIcon, LogOut, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { NotificationsPopover } from './NotificationsPopover';
 
 interface NavbarProps {
@@ -130,6 +130,19 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
 
               {getRoleBadge(user.role)}
+
+              {(user.role === 'partner_storage' || user.role === 'partner_transport') && (
+                <a
+                  href="http://localhost:3001"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hidden sm:inline-flex items-center space-x-1.5 text-xs font-bold px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
+                  title="Open Partner Portal (:3001)"
+                >
+                  <span>Partner Portal</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
 
               <NotificationsPopover />
 

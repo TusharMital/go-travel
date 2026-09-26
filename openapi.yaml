@@ -457,6 +457,192 @@ paths:
         '200':
           description: Partner account status transitioned and notification dispatched
 
+  /partners/me:
+    get:
+      summary: Get authenticated partner profile and onboarding status
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Partner account profile details
+
+  /partners/onboard:
+    post:
+      summary: Submit partner onboarding application (transitions to pending review)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - business_name
+                - partner_type
+              properties:
+                business_name:
+                  type: string
+                partner_type:
+                  type: string
+                  enum: [storage, transport, both]
+                contact_name:
+                  type: string
+                contact_phone:
+                  type: string
+                city:
+                  type: string
+                address:
+                  type: string
+                tax_id:
+                  type: string
+                payout_details_ref:
+                  type: string
+      responses:
+        '201':
+          description: Onboarding application submitted successfully
+
+  /partners/locations:
+    get:
+      summary: List storage locations for verified storage partner
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of storage locations
+    post:
+      summary: Create a new storage location
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - address
+                - city
+                - lat
+                - lng
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+                city:
+                  type: string
+                lat:
+                  type: number
+                lng:
+                  type: number
+                initial_capacity:
+                  type: integer
+                  default: 20
+                price_per_bag_per_day:
+                  type: number
+                  default: 6.0
+      responses:
+        '201':
+          description: Storage location created
+
+  /partners/locations/{id}/inventory:
+    post:
+      summary: Update inventory capacity and price per bag per date
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date
+                - total_capacity
+                - price_per_bag_per_day
+              properties:
+                date:
+                  type: string
+                  format: date
+                total_capacity:
+                  type: integer
+                price_per_bag_per_day:
+                  type: number
+      responses:
+        '200':
+          description: Inventory updated successfully
+
+  /partners/bookings:
+    get:
+      summary: List bookings for partner locations
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [confirmed, checked_in, checked_out, cancelled]
+      responses:
+        '200':
+          description: Paginated partner bookings
+
+  /partners/bookings/{id}/check-in:
+    patch:
+      summary: Mark luggage storage booking as checked-in (state machine confirmed -> checked_in)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking marked as checked in
+
+  /partners/bookings/{id}/check-out:
+    patch:
+      summary: Mark luggage storage booking as checked-out (state machine checked_in -> checked_out)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking marked as checked out
+
+  /partners/payouts/summary:
+    get:
+      summary: Get partner payout financials and settlement ledger
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Financial summary including gross revenue, commission, and available payout
+
+  /partners/payouts/request:
+    post:
+      summary: Request immediate payout of available balance
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Payout request queued for processing
+
 components:
   securitySchemes:
     bearerAuth:
