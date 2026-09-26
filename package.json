@@ -1,0 +1,28 @@
+{
+  "name": "integrated-travel-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Unified trip planning, luggage storage discovery & booking, and last-mile transport platform",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces --if-present",
+    "dev:api": "npm run dev --workspace=@travel/api",
+    "dev:web": "npm run dev --workspace=@travel/web",
+    "dev:partner": "npm run dev --workspace=@travel/partner-portal",
+    "dev:admin": "npm run dev --workspace=@travel/admin",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace=@travel/api",
+    "db:generate": "npm run db:generate --workspace=@travel/api",
+    "db:seed": "npm run db:seed --workspace=@travel/api",
+    "db:studio": "npm run db:studio --workspace=@travel/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.3"
+  }
+}
