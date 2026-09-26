@@ -5,6 +5,7 @@ import morgan from 'morgan';
 import { correlationIdMiddleware } from './middlewares/audit.middleware.js';
 import { errorHandler } from './middlewares/error.middleware.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { tripsRouter } from './modules/trips/trips.routes.js';
 
 export function createApp(): Application {
   const app = express();
@@ -33,6 +34,7 @@ export function createApp(): Application {
   // Base API v1 Routes
   const apiV1Router = express.Router();
   apiV1Router.use('/auth', authRouter);
+  apiV1Router.use('/trips', tripsRouter);
 
   app.use('/api/v1', apiV1Router);
 

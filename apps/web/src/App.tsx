@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Navbar } from './components/Navbar';
 import { AuthModal, AuthMode } from './components/AuthModal';
+import { TripList } from './components/TripList';
+import { TripTimeline } from './components/TripTimeline';
 import {
   Luggage,
   MapPin,
@@ -14,6 +16,7 @@ import {
   Clock,
   Sparkles,
   ExternalLink,
+  Compass,
 } from 'lucide-react';
 
 function Dashboard() {
@@ -21,6 +24,10 @@ function Dashboard() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [verificationFeedback, setVerificationFeedback] = useState<string | null>(null);
+
+  // Active view management
+  const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'trips' | 'workbench'>('trips');
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -77,51 +84,157 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white p-8 sm:p-12 shadow-2xl border border-slate-800">
-          <div className="relative z-10 max-w-2xl">
-            <div className="inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-semibold text-indigo-300 mb-6">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Unified Travel Workflow</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white mb-4">
-              Explore freely without your luggage dragging you down.
-            </h1>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8">
-              Bridge itinerary arrival & departure gaps. Discover verified secure luggage storage lockers, book last-mile transit, and navigate seamlessly in one place.
-            </p>
+        {/* Hero Section for Guest or Overview */}
+        {!isAuthenticated && (
+          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white p-8 sm:p-12 shadow-2xl border border-slate-800">
+            <div className="relative z-10 max-w-2xl">
+              <div className="inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-semibold text-indigo-300 mb-6">
+                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Unified Travel Workflow</span>
+              </div>
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white mb-4">
+                Explore freely without luggage dragging you down.
+              </h1>
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8">
+                Bridge itinerary arrival & departure gaps. Discover verified secure luggage storage lockers, book last-mile transit, and navigate seamlessly in one place.
+              </p>
 
-            <div className="flex flex-wrap gap-3">
-              {!isAuthenticated ? (
-                <>
-                  <button
-                    onClick={() => openAuth('register')}
-                    className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2"
-                  >
-                    <span>Get Started</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => openAuth('login')}
-                    className="px-6 py-3.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl transition-all"
-                  >
-                    Demo Quick Logins
-                  </button>
-                </>
-              ) : (
-                <div className="flex items-center space-x-2 bg-indigo-950/60 border border-indigo-800/60 p-3 rounded-2xl">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-                    ✓
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-slate-400">Signed in as </span>
-                    <span className="font-semibold text-white">{user?.full_name}</span> ({user?.role})
-                  </div>
-                </div>
-              )}
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => openAuth('register')}
+                  className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => openAuth('login')}
+                  className="px-6 py-3.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl transition-all"
+                >
+                  Demo Quick Logins
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* If Authenticated: Active Section */}
+        {isAuthenticated && (
+          <div className="space-y-6">
+            {/* Top Navigation Tabs */}
+            <div className="flex items-center space-x-2 border-b border-slate-200 pb-3">
+              <button
+                onClick={() => {
+                  setActiveTab('trips');
+                  setSelectedTripId(null);
+                }}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'trips' && !selectedTripId
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>My Trips & Gaps</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('workbench')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'workbench'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Shield className="w-3.5 h-3.5" />
+                <span>Session & RBAC Workbench</span>
+              </button>
+            </div>
+
+            {/* TAB CONTENT: TRIPS & TIMELINE */}
+            {activeTab === 'trips' && (
+              <div>
+                {selectedTripId ? (
+                  <TripTimeline
+                    tripId={selectedTripId}
+                    onBack={() => setSelectedTripId(null)}
+                    onFindStorage={(loc) => {
+                      alert(`Finding storage near coordinates: (${loc.lat}, ${loc.lng}) - Module 4.3 ready!`);
+                    }}
+                  />
+                ) : (
+                  <TripList onSelectTrip={(id) => setSelectedTripId(id)} />
+                )}
+              </div>
+            )}
+
+            {/* TAB CONTENT: SESSION WORKBENCH */}
+            {activeTab === 'workbench' && user && (
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Current User Session</h3>
+                    <p className="text-xs text-slate-500">Live authentication details decoded from JWT access token</p>
+                  </div>
+                  <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">
+                    ID: {user.id.slice(0, 8)}...
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block font-medium">Full Name</span>
+                    <span className="font-semibold text-slate-900 text-sm mt-0.5 block">{user.full_name}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block font-medium">Email Address</span>
+                    <span className="font-semibold text-slate-900 text-sm mt-0.5 block">{user.email}</span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block font-medium">Assigned Role</span>
+                    <span className="font-semibold uppercase tracking-wider text-indigo-600 text-xs mt-1 block">
+                      {user.role}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <span className="text-slate-400 block font-medium">Verification State</span>
+                    <span className={`font-semibold text-xs mt-1 block ${user.email_verified_at ? 'text-emerald-600' : 'text-amber-600'}`}>
+                      {user.email_verified_at ? '✓ Verified' : '⚠ Unverified'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Portal Deep Links */}
+                {(user.role === 'partner_storage' || user.role === 'partner_transport' || user.role === 'admin') && (
+                  <div className="pt-2 flex flex-wrap gap-3">
+                    {(user.role === 'partner_storage' || user.role === 'partner_transport') && (
+                      <a
+                        href="http://localhost:3001"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3.5 py-2 rounded-xl border border-emerald-200"
+                      >
+                        <span>Open Partner Portal (:3001)</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                    {user.role === 'admin' && (
+                      <a
+                        href="http://localhost:3002"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 px-3.5 py-2 rounded-xl border border-amber-200"
+                      >
+                        <span>Open Admin Console (:3002)</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Feature Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -155,72 +268,6 @@ function Dashboard() {
             </p>
           </div>
         </div>
-
-        {/* User Session Workbench */}
-        {isAuthenticated && user && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Current User Session</h3>
-                <p className="text-xs text-slate-500">Live authentication details decoded from JWT access token</p>
-              </div>
-              <span className="text-xs font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg">
-                ID: {user.id.slice(0, 8)}...
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-              <div className="bg-slate-50 p-3 rounded-xl">
-                <span className="text-slate-400 block font-medium">Full Name</span>
-                <span className="font-semibold text-slate-900 text-sm">{user.full_name}</span>
-              </div>
-              <div className="bg-slate-50 p-3 rounded-xl">
-                <span className="text-slate-400 block font-medium">Email Address</span>
-                <span className="font-semibold text-slate-900 text-sm">{user.email}</span>
-              </div>
-              <div className="bg-slate-50 p-3 rounded-xl">
-                <span className="text-slate-400 block font-medium">Assigned Role</span>
-                <span className="font-semibold uppercase tracking-wider text-indigo-600 text-xs mt-1 block">
-                  {user.role}
-                </span>
-              </div>
-              <div className="bg-slate-50 p-3 rounded-xl">
-                <span className="text-slate-400 block font-medium">Verification State</span>
-                <span className={`font-semibold text-xs mt-1 block ${user.email_verified_at ? 'text-emerald-600' : 'text-amber-600'}`}>
-                  {user.email_verified_at ? '✓ Verified' : '⚠ Unverified'}
-                </span>
-              </div>
-            </div>
-
-            {/* Portal Deep Links */}
-            {(user.role === 'partner_storage' || user.role === 'partner_transport' || user.role === 'admin') && (
-              <div className="pt-2 flex flex-wrap gap-3">
-                {(user.role === 'partner_storage' || user.role === 'partner_transport') && (
-                  <a
-                    href="http://localhost:3001"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3.5 py-2 rounded-xl border border-emerald-200"
-                  >
-                    <span>Open Partner Portal (:3001)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                {user.role === 'admin' && (
-                  <a
-                    href="http://localhost:3002"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 px-3.5 py-2 rounded-xl border border-amber-200"
-                  >
-                    <span>Open Admin Console (:3002)</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        )}
       </main>
 
       <AuthModal

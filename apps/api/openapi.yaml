@@ -345,6 +345,332 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /trips:
+    get:
+      summary: List user trips with pagination
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [planning, confirmed, in_progress, completed, cancelled]
+      responses:
+        '200':
+          description: Paginated trips list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Trip'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Create a new trip
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - origin_place
+                - destination_place
+                - start_date
+                - end_date
+              properties:
+                title:
+                  type: string
+                origin_place:
+                  type: string
+                destination_place:
+                  type: string
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+                timezone:
+                  type: string
+                  default: UTC
+                status:
+                  type: string
+                  enum: [planning, confirmed, in_progress, completed, cancelled]
+      responses:
+        '201':
+          description: Trip created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '400':
+          description: Validation error or missing Idempotency-Key
+
+  /trips/{id}:
+    get:
+      summary: Get trip details including itinerary items and linked bookings
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Trip'
+        '404':
+          description: Trip not found
+
+    put:
+      summary: Update trip details
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                origin_place:
+                  type: string
+                destination_place:
+                  type: string
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+                timezone:
+                  type: string
+                status:
+                  type: string
+      responses:
+        '200':
+          description: Trip updated successfully
+        '404':
+          description: Trip not found
+
+    delete:
+      summary: Soft-delete a trip
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Trip soft-deleted successfully
+
+  /trips/{id}/gaps:
+    get:
+      summary: Auto-detect arrival-to-checkin and checkout-to-departure gaps in itinerary
+      tags:
+        - Trips
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of detected gaps with storage recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ItineraryGap'
+
+  /trips/{id}/itinerary:
+    post:
+      summary: Add an itinerary item to trip
+      tags:
+        - Itinerary
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - title
+                - starts_at
+                - ends_at
+              properties:
+                type:
+                  type: string
+                  enum: [flight, hotel, activity, storage, transport]
+                title:
+                  type: string
+                location_lat:
+                  type: number
+                location_lng:
+                  type: number
+                address:
+                  type: string
+                starts_at:
+                  type: string
+                  format: date-time
+                ends_at:
+                  type: string
+                  format: date-time
+                sequence_order:
+                  type: integer
+                  default: 0
+      responses:
+        '201':
+          description: Itinerary stop created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItineraryItem'
+
+  /trips/{id}/itinerary/{itemId}:
+    put:
+      summary: Update an itinerary stop
+      tags:
+        - Itinerary
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                starts_at:
+                  type: string
+                  format: date-time
+                ends_at:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Itinerary stop updated
+
+    delete:
+      summary: Remove an itinerary stop
+      tags:
+        - Itinerary
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: itemId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Itinerary stop removed
+
 components:
   securitySchemes:
     bearerAuth:
@@ -418,3 +744,107 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    Trip:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        origin_place:
+          type: string
+        destination_place:
+          type: string
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        timezone:
+          type: string
+        status:
+          type: string
+          enum: [planning, confirmed, in_progress, completed, cancelled]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ItineraryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trip_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [flight, hotel, activity, storage, transport]
+        title:
+          type: string
+        location_lat:
+          type: number
+          nullable: true
+        location_lng:
+          type: number
+          nullable: true
+        address:
+          type: string
+          nullable: true
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        sequence_order:
+          type: integer
+
+    ItineraryGap:
+      type: object
+      properties:
+        id:
+          type: string
+        gapType:
+          type: string
+          enum: [ARRIVAL_GAP, DEPARTURE_GAP, TIMELINE_GAP]
+        title:
+          type: string
+        description:
+          type: string
+        startsAt:
+          type: string
+          format: date-time
+        endsAt:
+          type: string
+          format: date-time
+        durationMinutes:
+          type: integer
+        durationFormatted:
+          type: string
+        recommendedLocation:
+          type: object
+          properties:
+            lat:
+              type: number
+            lng:
+              type: number
+            address:
+              type: string
+        hasStorageBooked:
+          type: boolean
+        hasTransportBooked:
+          type: boolean
+        recommendationAction:
+          type: string
+          enum: [BOOK_STORAGE, BOOK_TRANSPORT, ALL_SET]
