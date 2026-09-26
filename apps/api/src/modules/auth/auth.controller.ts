@@ -1,6 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { authService } from './auth.service.js';
-import { RegisterDto, LoginDto, RefreshTokenDto } from './auth.dto.js';
+import {
+  RegisterDto,
+  LoginDto,
+  RefreshTokenDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  RequestVerificationDto,
+  ConfirmVerificationDto,
+} from './auth.dto.js';
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -47,6 +55,53 @@ export class AuthController {
     try {
       const user = await authService.getCurrentUser(req.user!.id);
       res.status(200).json(user);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const validated = ForgotPasswordDto.parse(req.body);
+      const result = await authService.forgotPassword(validated, req.correlationId || '');
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const validated = ResetPasswordDto.parse(req.body);
+      const result = await authService.resetPassword(validated, req.correlationId || '');
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async requestEmailVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const validated = RequestVerificationDto.parse(req.body);
+      const result = await authService.requestEmailVerification(
+        validated,
+        req.user?.id,
+        req.correlationId || ''
+      );
+      res.status(200).json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async confirmEmailVerification(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const validated = ConfirmVerificationDto.parse(req.body);
+      const result = await authService.confirmEmailVerification(
+        validated,
+        req.correlationId || ''
+      );
+      res.status(200).json(result);
     } catch (err) {
       next(err);
     }

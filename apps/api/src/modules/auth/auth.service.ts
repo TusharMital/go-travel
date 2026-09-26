@@ -6,7 +6,15 @@ import { prisma } from '../../prisma.js';
 import { env } from '../../config/env.js';
 import { AppError } from '../../middlewares/error.middleware.js';
 import { recordAuditEvent } from '../../middlewares/audit.middleware.js';
-import { RegisterInput, LoginInput } from './auth.dto.js';
+import { getNotificationsAdapter } from '../../adapters/notifications/index.js';
+import {
+  RegisterInput,
+  LoginInput,
+  ForgotPasswordInput,
+  ResetPasswordInput,
+  RequestVerificationInput,
+  ConfirmVerificationInput,
+} from './auth.dto.js';
 import { UserRole, PartnerType, PartnerStatus, VerificationStatus } from '@travel/shared';
 
 export interface AuthTokens {
@@ -31,9 +39,19 @@ export class AuthService {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
-  private generateAccessToken(user: { id: string; email: string; role: string }): string {
+  private generateAccessToken(user: {
+    id: string;
+    email: string;
+    role: string;
+    email_verified_at?: Date | null;
+  }): string {
     return jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        email_verified: !!user.email_verified_at,
+      },
       env.JWT_ACCESS_SECRET,
       { expiresIn: env.JWT_ACCESS_EXPIRES_IN as any }
     );
@@ -43,7 +61,6 @@ export class AuthService {
     const rawToken = uuidv4() + '.' + crypto.randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);
 
-    // Default 7 days expiry
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -70,7 +87,6 @@ export class AuthService {
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(input.password, saltRounds);
 
-    // Concurrency / transaction safe creation of user and associated partner profiles
     const newUser = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
@@ -82,7 +98,6 @@ export class AuthService {
         },
       });
 
-      // Setup partner profiles if registering as a partner
       if (input.role === UserRole.PARTNER_STORAGE) {
         const partnerAccount = await tx.partnerAccount.create({
           data: {
@@ -95,7 +110,7 @@ export class AuthService {
         await tx.storageProvider.create({
           data: {
             partner_account_id: partnerAccount.id,
-            business_name: input.business_name || input.full_name + ' Storage',
+            business_name: input.business_name || `${input.full_name} Storage`,
             verification_status: VerificationStatus.PENDING,
           },
         });
@@ -111,7 +126,7 @@ export class AuthService {
         await tx.transportProvider.create({
           data: {
             partner_account_id: partnerAccount.id,
-            name: input.business_name || input.full_name + ' Transport',
+            name: input.business_name || `${input.full_name} Transport`,
             modes_supported: ['taxi', 'rideshare'],
             verification_status: VerificationStatus.PENDING,
           },
@@ -121,7 +136,6 @@ export class AuthService {
       return user;
     });
 
-    // Record audit event
     await recordAuditEvent({
       actorUserId: newUser.id,
       action: 'USER_REGISTERED',
@@ -211,7 +225,6 @@ export class AuthService {
       throw new AppError('Account is no longer active.', 401, 'ACCOUNT_DEACTIVATED');
     }
 
-    // Refresh token rotation: Revoke old token and issue new token pair
     await prisma.refreshToken.update({
       where: { id: storedToken.id },
       data: { revoked_at: new Date() },
@@ -294,6 +307,206 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async forgotPassword(input: ForgotPasswordInput, correlationId: string): Promise<{ message: string }> {
+    const user = await prisma.user.findFirst({
+      where: { email: input.email.toLowerCase(), deleted_at: null },
+    });
+
+    if (!user) {
+      // Do not reveal whether user exists for privacy and enumeration protection
+      return { message: 'If that email is registered, a password reset link has been dispatched.' };
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+
+    // 1-hour expiration
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+    await prisma.passwordResetToken.create({
+      data: {
+        user_id: user.id,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+      },
+    });
+
+    // Notify via decoupled notifications provider adapter
+    const notifications = getNotificationsAdapter();
+    await notifications.send({
+      toUserId: user.id,
+      recipientEmail: user.email,
+      channel: 'EMAIL',
+      template: 'PASSWORD_RESET',
+      data: {
+        resetToken: rawToken,
+        email: user.email,
+        expiresAt: expiresAt.toISOString(),
+      },
+    });
+
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: 'PASSWORD_RESET_REQUESTED',
+      entityType: 'User',
+      entityId: user.id,
+      beforeState: null,
+      afterState: { email: user.email },
+      correlationId,
+    });
+
+    return { message: 'If that email is registered, a password reset link has been dispatched.' };
+  }
+
+  async resetPassword(input: ResetPasswordInput, correlationId: string): Promise<{ message: string }> {
+    const tokenHash = this.hashToken(input.token);
+
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { token_hash: tokenHash },
+      include: { user: true },
+    });
+
+    if (!resetToken || resetToken.used_at || resetToken.expires_at < new Date()) {
+      throw new AppError('Password reset token is invalid or has expired.', 400, 'INVALID_RESET_TOKEN');
+    }
+
+    const saltRounds = 10;
+    const newPasswordHash = await bcrypt.hash(input.newPassword, saltRounds);
+
+    // Transaction to update password, mark token used, and revoke all active refresh tokens
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: resetToken.user_id },
+        data: { password_hash: newPasswordHash },
+      });
+
+      await tx.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { used_at: new Date() },
+      });
+
+      await tx.refreshToken.updateMany({
+        where: { user_id: resetToken.user_id, revoked_at: null },
+        data: { revoked_at: new Date() },
+      });
+    });
+
+    await recordAuditEvent({
+      actorUserId: resetToken.user_id,
+      action: 'PASSWORD_RESET_COMPLETED',
+      entityType: 'User',
+      entityId: resetToken.user_id,
+      beforeState: null,
+      afterState: { password_updated: true },
+      correlationId,
+    });
+
+    return { message: 'Password has been reset successfully. Please log in with your new password.' };
+  }
+
+  async requestEmailVerification(
+    input: RequestVerificationInput,
+    currentUserId?: string,
+    correlationId: string = ''
+  ): Promise<{ message: string }> {
+    let user;
+    if (currentUserId) {
+      user = await prisma.user.findUnique({ where: { id: currentUserId } });
+    } else if (input.email) {
+      user = await prisma.user.findUnique({ where: { email: input.email.toLowerCase() } });
+    }
+
+    if (!user) {
+      throw new AppError('User not found.', 404, 'NOT_FOUND');
+    }
+
+    if (user.email_verified_at) {
+      throw new AppError('Email address is already verified.', 400, 'EMAIL_ALREADY_VERIFIED');
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+
+    // 24-hour expiration
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await prisma.emailVerificationToken.create({
+      data: {
+        user_id: user.id,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+      },
+    });
+
+    const notifications = getNotificationsAdapter();
+    await notifications.send({
+      toUserId: user.id,
+      recipientEmail: user.email,
+      channel: 'EMAIL',
+      template: 'EMAIL_VERIFICATION',
+      data: {
+        verificationToken: rawToken,
+        email: user.email,
+        expiresAt: expiresAt.toISOString(),
+      },
+    });
+
+    await recordAuditEvent({
+      actorUserId: user.id,
+      action: 'EMAIL_VERIFICATION_REQUESTED',
+      entityType: 'User',
+      entityId: user.id,
+      beforeState: null,
+      afterState: { email: user.email },
+      correlationId,
+    });
+
+    return { message: 'A verification email has been dispatched.' };
+  }
+
+  async confirmEmailVerification(
+    input: ConfirmVerificationInput,
+    correlationId: string
+  ): Promise<{ message: string }> {
+    const tokenHash = this.hashToken(input.token);
+
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { token_hash: tokenHash },
+    });
+
+    if (!verificationToken || verificationToken.used_at || verificationToken.expires_at < new Date()) {
+      throw new AppError(
+        'Email verification token is invalid or has expired.',
+        400,
+        'INVALID_VERIFICATION_TOKEN'
+      );
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: { id: verificationToken.user_id },
+        data: { email_verified_at: new Date() },
+      });
+
+      await tx.emailVerificationToken.update({
+        where: { id: verificationToken.id },
+        data: { used_at: new Date() },
+      });
+    });
+
+    await recordAuditEvent({
+      actorUserId: verificationToken.user_id,
+      action: 'EMAIL_VERIFIED',
+      entityType: 'User',
+      entityId: verificationToken.user_id,
+      beforeState: { email_verified_at: null },
+      afterState: { email_verified_at: new Date() },
+      correlationId,
+    });
+
+    return { message: 'Email address verified successfully.' };
   }
 }
 

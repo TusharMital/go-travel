@@ -7,7 +7,7 @@ export const RegisterDto = z.object({
   full_name: z.string().min(1, 'Full name is required'),
   phone: z.string().optional(),
   role: z.nativeEnum(UserRole).default(UserRole.TRAVELER),
-  business_name: z.string().optional(), // For partner registrations
+  business_name: z.string().optional(),
 });
 
 export type RegisterInput = z.infer<typeof RegisterDto>;
@@ -24,3 +24,28 @@ export const RefreshTokenDto = z.object({
 });
 
 export type RefreshTokenInput = z.infer<typeof RefreshTokenDto>;
+
+export const ForgotPasswordDto = z.object({
+  email: z.string().email('Valid email is required'),
+});
+
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordDto>;
+
+export const ResetPasswordDto = z.object({
+  token: z.string().min(1, 'Reset token is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters long'),
+});
+
+export type ResetPasswordInput = z.infer<typeof ResetPasswordDto>;
+
+export const RequestVerificationDto = z.object({
+  email: z.string().email('Valid email is required').optional(),
+});
+
+export type RequestVerificationInput = z.infer<typeof RequestVerificationDto>;
+
+export const ConfirmVerificationDto = z.object({
+  token: z.string().min(1, 'Verification token is required'),
+});
+
+export type ConfirmVerificationInput = z.infer<typeof ConfirmVerificationDto>;

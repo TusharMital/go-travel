@@ -7,6 +7,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   role: UserRole;
+  email_verified: boolean;
 }
 
 declare global {
@@ -69,4 +70,28 @@ export function authorize(...roles: (UserRole | string)[]) {
 
     next();
   };
+}
+
+export function requireVerifiedEmail(req: Request, res: Response, next: NextFunction): void {
+  if (!req.user) {
+    res.status(401).json({
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Authentication required before checking verification status.',
+      },
+    });
+    return;
+  }
+
+  if (!req.user.email_verified) {
+    res.status(403).json({
+      error: {
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Your email address must be verified to perform this action.',
+      },
+    });
+    return;
+  }
+
+  next();
 }
