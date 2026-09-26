@@ -4,12 +4,20 @@
  * so mock implementations can be swapped for real providers without touching business logic.
  */
 
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
 export interface GeocodeResult {
   address: string;
+  formattedAddress: string;
   lat: number;
   lng: number;
   city?: string;
   country?: string;
+  postalCode?: string;
+  placeId?: string;
 }
 
 export interface DistanceMatrixResult {
@@ -21,10 +29,31 @@ export interface DistanceMatrixResult {
   durationSeconds: number;
 }
 
-export interface IMapsProvider {
+export interface DistanceResult {
+  origin: Coordinates;
+  destination: Coordinates;
+  distanceMeters: number;
+  distanceKm: number;
+}
+
+export interface WalkingTimeResult {
+  origin: Coordinates;
+  destination: Coordinates;
+  distanceMeters: number;
+  walkingDurationMinutes: number;
+  walkingDurationSeconds: number;
+  formattedDuration: string;
+}
+
+export interface LocationProvider {
   name: string;
   geocode(address: string): Promise<GeocodeResult>;
   reverseGeocode(lat: number, lng: number): Promise<GeocodeResult>;
+  distance(a: Coordinates, b: Coordinates): Promise<DistanceResult>;
+  estimateWalkingTime(a: Coordinates, b: Coordinates): Promise<WalkingTimeResult>;
+}
+
+export interface IMapsProvider extends LocationProvider {
   calculateDistance(
     originLat: number,
     originLng: number,

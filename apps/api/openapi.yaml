@@ -671,6 +671,196 @@ paths:
         '200':
           description: Itinerary stop removed
 
+  /location/geocode:
+    get:
+      summary: Geocode an address to geographic coordinates
+      tags:
+        - Location
+      parameters:
+        - in: query
+          name: address
+          required: true
+          schema:
+            type: string
+          description: The street address or landmark name to geocode
+      responses:
+        '200':
+          description: Geocoded coordinates and address metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodeResult'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /location/reverse-geocode:
+    get:
+      summary: Reverse geocode latitude and longitude to an address
+      tags:
+        - Location
+      parameters:
+        - in: query
+          name: lat
+          required: true
+          schema:
+            type: number
+            minimum: -90
+            maximum: 90
+        - in: query
+          name: lng
+          required: true
+          schema:
+            type: number
+            minimum: -180
+            maximum: 180
+      responses:
+        '200':
+          description: Reverse geocoded address metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GeocodeResult'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /location/distance:
+    get:
+      summary: Calculate distance between two coordinates via query parameters
+      tags:
+        - Location
+      parameters:
+        - in: query
+          name: origin_lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: origin_lng
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: dest_lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: dest_lng
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Distance calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistanceResult'
+    post:
+      summary: Calculate distance between two coordinates via JSON body
+      tags:
+        - Location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - origin
+                - destination
+              properties:
+                origin:
+                  $ref: '#/components/schemas/Coordinates'
+                destination:
+                  $ref: '#/components/schemas/Coordinates'
+      responses:
+        '200':
+          description: Distance calculation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DistanceResult'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /location/walking-time:
+    get:
+      summary: Estimate pedestrian walking time via query parameters
+      tags:
+        - Location
+      parameters:
+        - in: query
+          name: origin_lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: origin_lng
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: dest_lat
+          required: true
+          schema:
+            type: number
+        - in: query
+          name: dest_lng
+          required: true
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Walking time and distance estimation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkingTimeResult'
+    post:
+      summary: Estimate pedestrian walking time via JSON body
+      tags:
+        - Location
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - origin
+                - destination
+              properties:
+                origin:
+                  $ref: '#/components/schemas/Coordinates'
+                destination:
+                  $ref: '#/components/schemas/Coordinates'
+      responses:
+        '200':
+          description: Walking time and distance estimation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalkingTimeResult'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -848,3 +1038,83 @@ components:
         recommendationAction:
           type: string
           enum: [BOOK_STORAGE, BOOK_TRANSPORT, ALL_SET]
+
+    Coordinates:
+      type: object
+      required:
+        - lat
+        - lng
+      properties:
+        lat:
+          type: number
+          minimum: -90
+          maximum: 90
+        lng:
+          type: number
+          minimum: -180
+          maximum: 180
+
+    GeocodeResult:
+      type: object
+      required:
+        - address
+        - formattedAddress
+        - lat
+        - lng
+      properties:
+        address:
+          type: string
+        formattedAddress:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        city:
+          type: string
+        country:
+          type: string
+        postalCode:
+          type: string
+        placeId:
+          type: string
+
+    DistanceResult:
+      type: object
+      required:
+        - origin
+        - destination
+        - distanceMeters
+        - distanceKm
+      properties:
+        origin:
+          $ref: '#/components/schemas/Coordinates'
+        destination:
+          $ref: '#/components/schemas/Coordinates'
+        distanceMeters:
+          type: integer
+        distanceKm:
+          type: number
+
+    WalkingTimeResult:
+      type: object
+      required:
+        - origin
+        - destination
+        - distanceMeters
+        - walkingDurationMinutes
+        - walkingDurationSeconds
+        - formattedDuration
+      properties:
+        origin:
+          $ref: '#/components/schemas/Coordinates'
+        destination:
+          $ref: '#/components/schemas/Coordinates'
+        distanceMeters:
+          type: integer
+        walkingDurationMinutes:
+          type: integer
+        walkingDurationSeconds:
+          type: integer
+        formattedDuration:
+          type: string

@@ -10,6 +10,7 @@ import {
 import { PaginationParams, formatPaginatedResponse } from '../../utils/pagination.js';
 import { ItineraryItemType } from '@travel/shared';
 import { Prisma } from '@prisma/client';
+import { getLocationProvider } from '../../adapters/location/index.js';
 
 export interface ItineraryGap {
   id: string;
@@ -197,14 +198,30 @@ export class TripsService {
   ) {
     await this.getTripById(tripId, userId, userRole);
 
+    let lat = input.location_lat;
+    let lng = input.location_lng;
+    let address = input.address;
+
+    // Automatically resolve coordinates via LocationProvider if address is provided
+    if ((lat === undefined || lng === undefined) && address) {
+      try {
+        const geo = await getLocationProvider().geocode(address);
+        lat = geo.lat;
+        lng = geo.lng;
+        if (!address) address = geo.formattedAddress;
+      } catch {
+        // Fall back gracefully to provided input
+      }
+    }
+
     const item = await prisma.itineraryItem.create({
       data: {
         trip_id: tripId,
         type: input.type,
         title: input.title,
-        location_lat: input.location_lat,
-        location_lng: input.location_lng,
-        address: input.address,
+        location_lat: lat,
+        location_lng: lng,
+        address,
         starts_at: new Date(input.starts_at),
         ends_at: new Date(input.ends_at),
         sequence_order: input.sequence_order,

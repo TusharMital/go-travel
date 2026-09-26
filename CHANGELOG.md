@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.3: Mapping & Location Services**:
+  - `LocationProvider` interface in `@travel/shared` with:
+    - `geocode(address)`
+    - `reverseGeocode(lat, lng)`
+    - `distance(a, b)`
+    - `estimateWalkingTime(a, b)`
+  - Deterministic `MockLocationProvider` implementing `LocationProvider` and backward-compatible `IMapsProvider`:
+    - Preset landmark geocoding & reverse geocoding for Berlin, Paris, Tokyo, London, and New York.
+    - Deterministic polynomial hash fallback for arbitrary addresses.
+    - Haversine distance calculations with meter and kilometer outputs.
+    - Pedestrian walking time estimation using 1.2x urban street routing factor and 4.8 km/h walking speed.
+  - Pluggable provider factory `getLocationProvider()` in `apps/api/src/adapters/location/` respecting `LOCATION_PROVIDER` / `MAPS_PROVIDER`.
+  - Integration with `TripsService` to auto-geocode itinerary item addresses when latitude/longitude are omitted.
+  - Dedicated Location REST API endpoints:
+    - `GET /api/v1/location/geocode`
+    - `GET /api/v1/location/reverse-geocode`
+    - `GET` & `POST /api/v1/location/distance`
+    - `GET` & `POST /api/v1/location/walking-time`
+  - Automated unit and integration tests in `apps/api/tests/location.test.ts` (21 tests).
+  - Updated OpenAPI 3.0.3 specification with Location endpoints and schemas.
 - **Module 4.2: Trip & Itinerary Planning**:
   - Trip CRUD endpoints: `POST /api/v1/trips`, `GET /api/v1/trips`, `GET /api/v1/trips/:id`, `PUT /api/v1/trips/:id`, `DELETE /api/v1/trips/:id`.
   - Itinerary item CRUD endpoints: `POST /api/v1/trips/:id/itinerary`, `PUT /api/v1/trips/:id/itinerary/:itemId`, `DELETE /api/v1/trips/:id/itinerary/:itemId`.

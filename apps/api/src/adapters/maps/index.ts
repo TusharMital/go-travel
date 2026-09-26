@@ -1,7 +1,8 @@
 import { IMapsProvider } from '@travel/shared';
-import { MockMapsAdapter } from './mock-maps.adapter.js';
+import { getLocationProvider, MockLocationProvider } from '../location/index.js';
 
 export function getMapsAdapter(): IMapsProvider {
-  // Can switch based on process.env.MAPS_PROVIDER === 'google' ? new GoogleMapsAdapter() : new MockMapsAdapter()
-  return new MockMapsAdapter();
+  return getLocationProvider() as unknown as IMapsProvider;
 }
+
+export { MockLocationProvider as MockMapsAdapter };
