@@ -8,6 +8,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.10: Admin Panel**:
+  - Separate frontend web application in `@travel/admin` (port 3002) for platform administrators and operational support staff, integrated with cross-portal navigation:
+    - **Basic Metrics Dashboard** (`MetricsDashboardTab.tsx`):
+      - Live, real-time metrics strictly computed from live PostgreSQL database records (zero hardcoded values):
+        - `bookingsToday`: Storage drop-offs + transport rides scheduled/created today.
+        - `conversionRate`: Percentage of planned itineraries that convert to confirmed bookings (or confirmed / total bookings).
+        - `cancellationRate`: Percentage of total created bookings that were cancelled, with dynamic health badges (Optimal <10%, Moderate 10-20%, Elevated >20%).
+        - `totalRevenue` & `revenueToday`: Platform gross merchandise volume aggregated from captured payments.
+        - `partnerBacklog`: Live pending partner applications awaiting evaluation with 1-click jump to queue.
+    - **Partner Verification Queue** (`PartnerVerificationTab.tsx`):
+      - Filter chips for `Pending Review` (with live counter badge), `Verified Partners`, `Suspended`, and `All`.
+      - Search by legal entity, owner, or email.
+      - Partner profile inspection: Business name, partner type (Storage, Transport, Both), contact person, email, phone, locations count, tax registration ID, and payout banking reference.
+      - **Approve Action**: Modal with optional compliance notes, transitions status to `verified`, updates provider records, logs immutable audit event `PARTNER_STATUS_CHANGED`, and dispatches data-driven notification to partner.
+      - **Suspend Action**: Modal with mandatory suspension reason (minimum 3 chars), transitions status to `suspended`, logs immutable audit event, disables discovery, and dispatches data-driven notification to partner.
+    - **Booking Lookup by ID / Customer Email** (`BookingLookupTab.tsx`):
+      - Universal instant search across luggage storage reservations and transport transfers.
+      - Filter chips by service type (`All`, `Storage`, `Transport`) and booking status (`Confirmed`, `Checked-In`, `Checked-Out`, `Cancelled`).
+      - Detailed Booking Inspection Modal:
+        - Customer details (name, email, phone).
+        - Service location and scheduled drop-off / pick-up windows.
+        - Payment details (amount, currency, captured/refunded status, provider transaction reference).
+        - Linked Trip Itinerary association.
+        - **Individual Booking Audit Trail**: Chronological lifecycle history of every state change (`CREATED` $\rightarrow$ `CONFIRMED` $\rightarrow$ `CHECKED_IN` $\rightarrow$ `CHECKED_OUT`), with timestamp, actor email, actor role, and correlation ID.
+    - **Audit Log Ledger & Viewer** (`AuditLogViewerTab.tsx`):
+      - Filterable audit events by action (`STORAGE_BOOKING_CREATED`, `STORAGE_BOOKING_CHECKED_IN`, `STORAGE_BOOKING_CHECKED_OUT`, `PARTNER_STATUS_CHANGED`, `PAYMENT_CAPTURED`, etc.).
+      - Entity Type filter (`StorageBooking`, `TransportBooking`, `PartnerAccount`, `StorageLocation`, `Payment`, `Trip`, `User`).
+      - Search by entity ID, actor email, or correlation ID.
+      - Expandable JSON diff row: Displays formatted `before_state` $\rightarrow$ `after_state` diff for every logged action.
+    - **Staff Persona Simulator**: In-navbar role switcher allowing live testing between `Admin (Full Access)`, `Support Specialist (Read-Only)`, and `Traveler (Unauthorized - 403 Forbidden)` personas.
+  - Backend Admin Management API (`apps/api/src/modules/admin/`):
+    - `GET /api/v1/admin/metrics`: Computes bookings today, conversion rate, cancellation rate, revenue aggregates, and partner status counts.
+    - `GET /api/v1/admin/partners`: Paginated partner verification queue with status filtering and counts.
+    - `GET /api/v1/admin/partners/:id`: Partner detailed profile with locations, fleet options, and audit logs.
+    - `POST /api/v1/admin/partners/:id/approve`: Approve partner account (Admin only, audit logged, notification sent).
+    - `POST /api/v1/admin/partners/:id/suspend`: Suspend partner account with mandatory reason (Admin only, audit logged, notification sent).
+    - `GET /api/v1/admin/bookings/lookup`: Multi-service booking lookup by ID or customer email with payment details.
+    - `GET /api/v1/admin/bookings/:type/:id`: Single booking detail with complete audit event timeline.
+    - `GET /api/v1/admin/audit-logs`: Paginated audit log ledger with filters on action, entity type, entity ID, date range, and search.
+  - Comprehensive Test Suite:
+    - 13 new automated unit and integration tests in `apps/api/tests/admin.test.ts` covering real-data metrics calculation, partner queue verification/suspension, mandatory reason validation, booking lookup by ID and email, audit log filtering, unauthenticated 401 rejection, traveler 403 rejection, and support role read-only authorization (140 total tests passing across 10 test suites).
+  - OpenAPI 3.0.3 Specification:
+    - Updated `openapi.yaml` documenting all 8 `/admin` endpoints.
 - **Module 4.9: Partner Portal**:
   - Separate frontend web application in `@travel/partner-portal` (port 3001) for luggage storage and transport operators, fully integrated with `@travel/web` (port 3000):
     - **Step 1: Partner Onboarding Form** (`OnboardingForm.tsx`): Form capturing legal business entity, partner type (`storage`, `transport`, `both`), contact details, city, operating address, tax registration, and automated bank payout IBAN details.

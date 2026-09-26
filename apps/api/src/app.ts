@@ -12,6 +12,7 @@ import { transportRouter } from './modules/transport/transport.routes.js';
 import { paymentsRouter } from './modules/payments/payments.routes.js';
 import { notificationsRouter } from './modules/notifications/notifications.routes.js';
 import { partnersRouter } from './modules/partners/partners.routes.js';
+import { adminRouter } from './modules/admin/admin.routes.js';
 import { initBookingOrchestrator } from './modules/orchestration/booking-orchestrator.js';
 import { initNotificationOrchestrator } from './modules/notifications/notification-orchestrator.js';
 import { pickupReminderScheduler } from './modules/notifications/pickup-reminder.scheduler.js';
@@ -58,6 +59,7 @@ export function createApp(): Application {
   apiV1Router.use('/payments', paymentsRouter);
   apiV1Router.use('/notifications', notificationsRouter);
   apiV1Router.use('/partners', partnersRouter);
+  apiV1Router.use('/admin', adminRouter);
 
   app.use('/api/v1', apiV1Router);
 

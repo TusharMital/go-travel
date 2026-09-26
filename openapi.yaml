@@ -643,6 +643,194 @@ paths:
         '200':
           description: Payout request queued for processing
 
+  /admin/metrics:
+    get:
+      summary: Basic metrics dashboard computed from real database aggregations
+      description: Returns bookings today, conversion rate, cancellation rate, revenue metrics, and partner backlog.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Live platform metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  bookingsToday:
+                    type: integer
+                  totalBookings:
+                    type: integer
+                  confirmedBookings:
+                    type: integer
+                  cancelledBookings:
+                    type: integer
+                  conversionRate:
+                    type: number
+                  cancellationRate:
+                    type: number
+                  totalTrips:
+                    type: integer
+                  tripsWithBookings:
+                    type: integer
+                  revenueToday:
+                    type: number
+                  totalRevenue:
+                    type: number
+
+  /admin/partners:
+    get:
+      summary: Partner verification queue with status filtering and counts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, pending, verified, suspended, rejected]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated partner accounts with verification backlog counts
+
+  /admin/partners/{id}:
+    get:
+      summary: Get partner profile with locations, fleet options, and audit logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Partner detailed profile
+
+  /admin/partners/{id}/approve:
+    post:
+      summary: Approve pending partner account (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+      responses:
+        '200':
+          description: Partner account verified and notification dispatched
+
+  /admin/partners/{id}/suspend:
+    post:
+      summary: Suspend partner account with mandatory reason (Admin only)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Partner account suspended, locations disabled, and notification dispatched
+
+  /admin/bookings/lookup:
+    get:
+      summary: Cross-service booking lookup by ID or traveler email
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [all, storage, transport]
+      responses:
+        '200':
+          description: Matching luggage storage and transit bookings with payment info
+
+  /admin/bookings/{type}/{id}:
+    get:
+      summary: Detailed booking inspection with linked audit trail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [storage, transport]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Full booking detail with lifecycle audit trail
+
+  /admin/audit-logs:
+    get:
+      summary: Filterable audit log ledger
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: entityType
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Paginated audit events with before and after state diffs
+
 components:
   securitySchemes:
     bearerAuth:

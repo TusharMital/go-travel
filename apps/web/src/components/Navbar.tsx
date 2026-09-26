@@ -144,6 +144,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </a>
               )}
 
+              {(user.role === 'admin' || user.role === 'support') && (
+                <a
+                  href="http://localhost:3002"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="hidden sm:inline-flex items-center space-x-1.5 text-xs font-bold px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 hover:bg-amber-100 transition-colors"
+                  title="Open Admin Console (:3002)"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Admin Console</span>
+                </a>
+              )}
+
               <NotificationsPopover />
 
               <button
