@@ -6,6 +6,8 @@ import { TripList } from './components/TripList';
 import { TripTimeline } from './components/TripTimeline';
 import { StorageDiscovery } from './components/StorageDiscovery';
 import { MyStorageBookings } from './components/MyStorageBookings';
+import { TransportDiscovery } from './components/TransportDiscovery';
+import { MyTransportBookings } from './components/MyTransportBookings';
 import {
   Luggage,
   MapPin,
@@ -19,6 +21,7 @@ import {
   Sparkles,
   ExternalLink,
   Compass,
+  Navigation,
 } from 'lucide-react';
 
 function Dashboard() {
@@ -29,8 +32,9 @@ function Dashboard() {
 
   // Active view management
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'trips' | 'storage' | 'bookings' | 'workbench'>('trips');
+  const [activeTab, setActiveTab] = useState<'trips' | 'storage' | 'transport' | 'bookings' | 'transport_bookings' | 'workbench'>('trips');
   const [storageSearchCoords, setStorageSearchCoords] = useState<{ lat: number; lng: number } | undefined>(undefined);
+  const [transportSearchOrigin, setTransportSearchOrigin] = useState<{ lat: number; lng: number; label?: string } | undefined>(undefined);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -161,6 +165,18 @@ function Dashboard() {
               </button>
 
               <button
+                onClick={() => setActiveTab('transport')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'transport'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Find Transport</span>
+              </button>
+
+              <button
                 onClick={() => setActiveTab('bookings')}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
                   activeTab === 'bookings'
@@ -169,7 +185,19 @@ function Dashboard() {
                 }`}
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>My Storage Bookings</span>
+                <span>Storage Bookings</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('transport_bookings')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                  activeTab === 'transport_bookings'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <Car className="w-3.5 h-3.5" />
+                <span>My Rides</span>
               </button>
 
               <button
@@ -196,6 +224,14 @@ function Dashboard() {
                       setStorageSearchCoords({ lat: loc.lat, lng: loc.lng });
                       setActiveTab('storage');
                     }}
+                    onFindTransport={(loc) => {
+                      setTransportSearchOrigin({
+                        lat: loc.lat,
+                        lng: loc.lng,
+                        label: loc.address || 'Itinerary Point',
+                      });
+                      setActiveTab('transport');
+                    }}
                   />
                 ) : (
                   <TripList onSelectTrip={(id) => setSelectedTripId(id)} />
@@ -211,8 +247,19 @@ function Dashboard() {
               />
             )}
 
+            {/* TAB CONTENT: TRANSPORT DISCOVERY */}
+            {activeTab === 'transport' && (
+              <TransportDiscovery
+                initialOrigin={transportSearchOrigin}
+                onBookingSuccess={() => setActiveTab('transport_bookings')}
+              />
+            )}
+
             {/* TAB CONTENT: MY STORAGE BOOKINGS */}
             {activeTab === 'bookings' && <MyStorageBookings />}
+
+            {/* TAB CONTENT: MY TRANSPORT BOOKINGS */}
+            {activeTab === 'transport_bookings' && <MyTransportBookings />}
 
             {/* TAB CONTENT: SESSION WORKBENCH */}
             {activeTab === 'workbench' && user && (

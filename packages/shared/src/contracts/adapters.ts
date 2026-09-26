@@ -116,12 +116,21 @@ export interface INotificationsProvider {
   send(payload: NotificationPayload): Promise<NotificationResult>;
 }
 
+export interface TransitRouteStep {
+  instruction: string;
+  mode: 'WALK' | 'SUBWAY' | 'BUS' | 'TRAIN';
+  line?: string;
+  durationMinutes: number;
+  distanceMeters?: number;
+}
+
 export interface TransportQuoteRequest {
   originLat: number;
   originLng: number;
   destLat: number;
   destLng: number;
-  mode: 'TAXI' | 'RIDESHARE' | 'TRANSIT' | 'BIKE';
+  mode?: 'TAXI' | 'RIDESHARE' | 'TRANSIT' | 'BIKE' | 'ALL';
+  scheduledAt?: string;
 }
 
 export interface TransportQuoteResponse {
@@ -132,6 +141,8 @@ export interface TransportQuoteResponse {
   currency: string;
   estimatedDurationMin: number;
   deepLinkUrl?: string;
+  isDirectBookable: boolean;
+  transitSteps?: TransitRouteStep[];
 }
 
 export interface ITransportProviderAdapter {

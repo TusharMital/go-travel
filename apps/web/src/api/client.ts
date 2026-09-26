@@ -193,6 +193,90 @@ let demoStorageLocations = [
   },
 ];
 
+let demoTransportOptions = [
+  {
+    id: 'prov-metro-transit',
+    provider_name: 'City Public Transit (S/U-Bahn & Bus)',
+    mode: 'transit',
+    estimated_price: 3.6,
+    currency: 'USD',
+    estimated_duration_min: 24,
+    is_direct_bookable: true,
+    deep_link_url: null,
+    transit_steps: [
+      {
+        instruction: 'Walk 200m to Alexanderplatz U-Bahn station',
+        mode: 'WALK',
+        durationMinutes: 3,
+        distanceMeters: 200,
+      },
+      {
+        instruction: 'Take U2 line towards Ruhleben (5 stops)',
+        mode: 'SUBWAY',
+        line: 'U2',
+        durationMinutes: 16,
+      },
+      {
+        instruction: 'Walk 150m to destination address',
+        mode: 'WALK',
+        durationMinutes: 3,
+        distanceMeters: 150,
+      },
+    ],
+  },
+  {
+    id: 'prov-city-taxi',
+    provider_name: 'Metropolitan Licensed Taxi',
+    mode: 'taxi',
+    estimated_price: 24.5,
+    currency: 'USD',
+    estimated_duration_min: 15,
+    is_direct_bookable: true,
+    deep_link_url: null,
+    transit_steps: null,
+  },
+  {
+    id: 'prov-uber-mock',
+    provider_name: 'Uber Comfort / Black',
+    mode: 'rideshare',
+    estimated_price: 22.0,
+    currency: 'USD',
+    estimated_duration_min: 14,
+    is_direct_bookable: false,
+    deep_link_url: 'https://m.uber.com/ul/?action=setPickup',
+    transit_steps: null,
+  },
+  {
+    id: 'prov-lime-mock',
+    provider_name: 'Lime E-Bike & Scooter Share',
+    mode: 'bike',
+    estimated_price: 4.8,
+    currency: 'USD',
+    estimated_duration_min: 20,
+    is_direct_bookable: false,
+    deep_link_url: 'https://lime.bike/ride',
+    transit_steps: null,
+  },
+];
+
+let demoTransportBookings = [
+  {
+    id: 'tb-demo-1',
+    user_id: 'u-demo-1',
+    transport_option_id: 'prov-city-taxi',
+    status: 'confirmed',
+    scheduled_at: new Date(Date.now() + 86400000 + 4 * 3600000).toISOString(),
+    price_total: 24.5,
+    currency: 'USD',
+    idempotency_key: 'idem-tb-1',
+    transport_option: {
+      provider: { name: 'Metropolitan Licensed Taxi' },
+      mode: 'taxi',
+      estimated_duration_min: 15,
+    },
+  },
+];
+
 let demoStorageBookings = [
   {
     id: 'sb-demo-1',
@@ -552,6 +636,68 @@ class ApiClient {
       } as unknown as T;
     }
 
+    // Transport options mock fallback
+    if (endpoint.startsWith('/transport/options')) {
+      const url = new URL(`http://localhost${endpoint}`);
+      const mode = url.searchParams.get('mode');
+      let filtered = [...demoTransportOptions];
+      if (mode) {
+        filtered = filtered.filter((o) => o.mode === mode);
+      }
+      return {
+        data: filtered,
+        meta: { total: filtered.length, page: 1, limit: 20 },
+      } as unknown as T;
+    }
+
+    // Transport handoff mock fallback
+    if (endpoint.startsWith('/transport/handoff') && options.method === 'POST') {
+      const body = JSON.parse((options.body as string) || '{}');
+      return {
+        handoff: true,
+        deep_link_url: body.deep_link_url || 'https://m.uber.com',
+        message: 'Handoff event logged. Redirecting to partner application.',
+      } as unknown as T;
+    }
+
+    // Transport bookings mock fallback
+    if (endpoint.startsWith('/transport/bookings')) {
+      if (endpoint.includes('/cancel') && options.method === 'POST') {
+        const parts = endpoint.split('/');
+        const bookingId = parts[3];
+        const b = demoTransportBookings.find((x) => x.id === bookingId);
+        if (b) b.status = 'cancelled';
+        return { message: 'Transport booking cancelled.', status: 'cancelled' } as unknown as T;
+      }
+
+      if (options.method === 'POST') {
+        const body = JSON.parse((options.body as string) || '{}');
+        const opt = demoTransportOptions.find((o) => o.id === body.transport_option_id) || demoTransportOptions[0];
+        const newBooking = {
+          id: `tb-${Date.now()}`,
+          user_id: 'u-demo-1',
+          transport_option_id: body.transport_option_id,
+          status: 'confirmed',
+          scheduled_at: body.scheduled_at || new Date().toISOString(),
+          price_total: opt.estimated_price,
+          currency: opt.currency || 'USD',
+          idempotency_key: (options.headers as any)?.['Idempotency-Key'] || `idem-${Date.now()}`,
+          transport_option: {
+            provider: { name: opt.provider_name },
+            mode: opt.mode,
+            estimated_duration_min: opt.estimated_duration_min,
+          },
+        };
+        demoTransportBookings.unshift(newBooking);
+        return newBooking as unknown as T;
+      }
+
+      return {
+        data: demoTransportBookings,
+        meta: { total: demoTransportBookings.length, page: 1, limit: 20, totalPages: 1 },
+      } as unknown as T;
+    }
+
     return {} as T;
   }
 
@@ -587,6 +733,42 @@ class ApiClient {
 
   async cancelStorageBooking(id: string, reason?: string): Promise<any> {
     return this.request(`/storage/bookings/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+  }
+
+  async searchTransportOptions(query: any): Promise<any> {
+    const params = new URLSearchParams();
+    Object.entries(query).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params.append(k, String(v));
+    });
+    return this.request(`/transport/options?${params.toString()}`);
+  }
+
+  async createTransportBooking(data: any, idempotencyKey: string): Promise<any> {
+    return this.request('/transport/bookings', {
+      method: 'POST',
+      headers: { 'Idempotency-Key': idempotencyKey },
+      body: JSON.stringify(data),
+    });
+  }
+
+  async recordTransportHandoff(data: any): Promise<any> {
+    return this.request('/transport/handoff', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async listMyTransportBookings(page = 1, limit = 20, status?: string): Promise<any> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (status) params.append('status', status);
+    return this.request(`/transport/bookings?${params.toString()}`);
+  }
+
+  async cancelTransportBooking(id: string, reason?: string): Promise<any> {
+    return this.request(`/transport/bookings/${id}/cancel`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });

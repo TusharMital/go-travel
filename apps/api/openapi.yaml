@@ -1168,6 +1168,244 @@ paths:
         '200':
           description: Booking cancelled and refunded
 
+  /transport/options:
+    get:
+      summary: Discover transport quotes and transit directions between origin and destination
+      tags:
+        - Transport
+      parameters:
+        - in: query
+          name: origin_lat
+          required: true
+          schema:
+            type: number
+            example: 52.5251
+        - in: query
+          name: origin_lng
+          required: true
+          schema:
+            type: number
+            example: 13.3694
+        - in: query
+          name: dest_lat
+          required: true
+          schema:
+            type: number
+            example: 52.5219
+        - in: query
+          name: dest_lng
+          required: true
+          schema:
+            type: number
+            example: 13.4132
+        - in: query
+          name: departure_time
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: mode
+          schema:
+            type: string
+            enum: [transit, taxi, rideshare, bike]
+      responses:
+        '200':
+          description: List of available transport options and quotes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransportOptionQuote'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+  /transport/bookings:
+    get:
+      summary: List user transport bookings
+      tags:
+        - Transport
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, confirmed, in_progress, completed, cancelled]
+      responses:
+        '200':
+          description: Paginated transport bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransportBooking'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+
+    post:
+      summary: Create transport booking or initiate handoff
+      tags:
+        - Transport
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transport_option_id
+                - origin_lat
+                - origin_lng
+                - dest_lat
+                - dest_lng
+                - scheduled_at
+              properties:
+                transport_option_id:
+                  type: string
+                origin_lat:
+                  type: number
+                origin_lng:
+                  type: number
+                dest_lat:
+                  type: number
+                dest_lng:
+                  type: number
+                scheduled_at:
+                  type: string
+                  format: date-time
+                payment_method:
+                  type: string
+                  default: card
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Booking created or handoff redirected
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TransportBooking'
+                  - type: object
+                    properties:
+                      handoff:
+                        type: boolean
+                        example: true
+                      deep_link_url:
+                        type: string
+                      message:
+                        type: string
+
+  /transport/bookings/{id}:
+    get:
+      summary: Get transport booking details
+      tags:
+        - Transport
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransportBooking'
+
+  /transport/bookings/{id}/cancel:
+    post:
+      summary: Cancel transport booking and refund payment
+      tags:
+        - Transport
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Transport booking cancelled
+
+  /transport/handoff:
+    post:
+      summary: Record partner handoff audit event for deep link navigation
+      tags:
+        - Transport
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transport_option_id
+                - deep_link_url
+              properties:
+                transport_option_id:
+                  type: string
+                deep_link_url:
+                  type: string
+      responses:
+        '200':
+          description: Handoff logged
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  handoff:
+                    type: boolean
+                    example: true
+                  deep_link_url:
+                    type: string
+                  message:
+                    type: string
+
 components:
   securitySchemes:
     bearerAuth:
@@ -1498,3 +1736,80 @@ components:
           type: number
         currency:
           type: string
+
+    TransitStep:
+      type: object
+      properties:
+        instruction:
+          type: string
+        mode:
+          type: string
+          enum: [walk, subway, bus, tram, train]
+        line:
+          type: string
+          nullable: true
+        durationMinutes:
+          type: integer
+        distanceMeters:
+          type: integer
+          nullable: true
+
+    TransportOptionQuote:
+      type: object
+      properties:
+        id:
+          type: string
+        provider_id:
+          type: string
+          nullable: true
+        provider_name:
+          type: string
+        mode:
+          type: string
+          enum: [transit, taxi, rideshare, bike]
+        estimated_price:
+          type: number
+        currency:
+          type: string
+        estimated_duration_min:
+          type: integer
+        is_direct_bookable:
+          type: boolean
+        deep_link_url:
+          type: string
+          nullable: true
+        transit_steps:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/TransitStep'
+
+    TransportBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        transport_option_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, in_progress, completed, cancelled]
+        scheduled_at:
+          type: string
+          format: date-time
+        price_total:
+          type: number
+        currency:
+          type: string
+        idempotency_key:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+

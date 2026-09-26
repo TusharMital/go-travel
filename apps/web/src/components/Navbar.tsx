@@ -4,8 +4,8 @@ import { Compass, ShieldCheck, User as UserIcon, LogOut, CheckCircle2, AlertCirc
 
 interface NavbarProps {
   onOpenAuth: (view: 'login' | 'register') => void;
-  activeTab?: 'trips' | 'storage' | 'bookings';
-  onChangeTab?: (tab: 'trips' | 'storage' | 'bookings') => void;
+  activeTab?: 'trips' | 'storage' | 'transport' | 'bookings' | 'transport_bookings';
+  onChangeTab?: (tab: 'trips' | 'storage' | 'transport' | 'bookings' | 'transport_bookings') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -53,10 +53,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Navigation Links */}
           {onChangeTab && (
-            <nav className="hidden md:flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl">
+            <nav className="hidden lg:flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl">
               <button
                 onClick={() => onChangeTab('trips')}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'trips'
                     ? 'bg-white text-indigo-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -66,23 +66,43 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 onClick={() => onChangeTab('storage')}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'storage'
                     ? 'bg-white text-indigo-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Find Storage
+                Storage
+              </button>
+              <button
+                onClick={() => onChangeTab('transport')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeTab === 'transport'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Transport
               </button>
               <button
                 onClick={() => onChangeTab('bookings')}
-                className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
                   activeTab === 'bookings'
                     ? 'bg-white text-indigo-600 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                My Bookings
+                Luggage Bookings
+              </button>
+              <button
+                onClick={() => onChangeTab('transport_bookings')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${
+                  activeTab === 'transport_bookings'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                My Rides
               </button>
             </nav>
           )}

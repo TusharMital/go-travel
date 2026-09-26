@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.5: Transport Module (Multi-Modal Discovery, Direct Booking & Partner Handoff)**:
+  - Multi-modal discovery endpoint: `GET /api/v1/transport/options` calculating real-time quotes given origin/destination coordinates and optional departure time/mode filters.
+  - Step-by-step public transit directions (`TransitRouteStep`) with walking, metro line transfers, and duration/distance metrics via deterministic `MockTransportAdapter`.
+  - Direct booking endpoint: `POST /api/v1/transport/bookings` with `Idempotency-Key` header, atomic DB transaction creating `TransportBooking` and processing `Payment`.
+  - Safe partner handoff endpoint: `POST /api/v1/transport/handoff` for deep-link-only providers (Uber Comfort/Black, Lime e-bikes/scooters) that logs an immutable `TRANSPORT_HANDOFF` audit event and returns the deep link *without* corrupting platform inventory or creating unnecessary DB bookings.
+  - User reservations endpoint: `GET /api/v1/transport/bookings` with status filtering and pagination.
+  - Cancellation endpoint: `POST /api/v1/transport/bookings/:id/cancel` transitioning status to `cancelled` and triggering payment refund.
+  - Frontend components in `@travel/web`:
+    - `TransportDiscovery`: Origin & destination preset selectors, coordinate inputs, swap button, mode filter pills (Transit, Taxi, Rideshare, Micro-mobility), step-by-step directions preview, direct booking modal, and deep-link handoff CTA with feedback alerts.
+    - `MyTransportBookings`: Reservations list with status badges (Confirmed, In Transit, Completed, Cancelled), cancellation dialog with reason capture, and partner handoff advisory card.
+    - `TripTimeline` integration: "Find Transport" action button directly on itinerary gap warning cards.
+    - `Navbar` & `App` navigation tabs for "Transport" and "My Rides".
+  - Automated tests in `apps/api/tests/transport.test.ts` (9 tests covering transit step directions, mode filtering, direct booking with payment, idempotency replay, deep-link handoff audit logging without DB booking, and cancellation).
 - **Module 4.4: Storage Module (Discovery, Inventory, Booking)**:
   - Discovery endpoint: `GET /api/v1/storage/locations` with geo-radius search, date/time window check, opening hours filter, bag size validation, and weighted composite relevance ranking ($50\%$ distance, $30\%$ rating, $20\%$ price).
   - Location details endpoint: `GET /api/v1/storage/locations/:id` with 14-day upcoming inventory.

@@ -55,9 +55,15 @@ interface TripTimelineProps {
   tripId: string;
   onBack: () => void;
   onFindStorage?: (location: { lat: number; lng: number; address?: string }) => void;
+  onFindTransport?: (origin: { lat: number; lng: number; address?: string }) => void;
 }
 
-export const TripTimeline: React.FC<TripTimelineProps> = ({ tripId, onBack, onFindStorage }) => {
+export const TripTimeline: React.FC<TripTimelineProps> = ({
+  tripId,
+  onBack,
+  onFindStorage,
+  onFindTransport,
+}) => {
   const [trip, setTrip] = useState<any>(null);
   const [gaps, setGaps] = useState<ItineraryGap[]>([]);
   const [loading, setLoading] = useState(true);
@@ -374,22 +380,34 @@ export const TripTimeline: React.FC<TripTimelineProps> = ({ tripId, onBack, onFi
                           </div>
                         </div>
 
-                        {followingGap.hasStorageBooked ? (
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-xl shrink-0">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Storage Secured</span>
-                          </span>
-                        ) : (
-                          <button
-                            onClick={() =>
-                              onFindStorage?.(followingGap.recommendedLocation)
-                            }
-                            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all shrink-0"
-                          >
-                            <Luggage className="w-3.5 h-3.5" />
-                            <span>Find Nearby Storage</span>
-                          </button>
-                        )}
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 shrink-0">
+                          {followingGap.hasStorageBooked ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1.5 rounded-xl shrink-0">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Storage Secured</span>
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                onFindStorage?.(followingGap.recommendedLocation)
+                              }
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all shrink-0"
+                            >
+                              <Luggage className="w-3.5 h-3.5" />
+                              <span>Find Storage</span>
+                            </button>
+                          )}
+
+                          {onFindTransport && (
+                            <button
+                              onClick={() => onFindTransport(followingGap.recommendedLocation)}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition-all shrink-0"
+                            >
+                              <Car className="w-3.5 h-3.5 text-indigo-600" />
+                              <span>Find Transport</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
