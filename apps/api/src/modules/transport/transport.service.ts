@@ -15,6 +15,14 @@ import {
   HandoffTransportInput,
 } from './transport.dto.js';
 import { PaginationParams, formatPaginatedResponse } from '../../utils/pagination.js';
+import { randomUUID } from 'crypto';
+import {
+  getEventBus,
+  BOOKING_CONFIRMED_EVENT,
+  BOOKING_CANCELLED_EVENT,
+  BookingConfirmedPayload,
+  BookingCancelledPayload,
+} from '../events/index.js';
 
 export class TransportService {
   /**
@@ -263,6 +271,37 @@ export class TransportService {
       correlationId,
     });
 
+    // 7. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
+    const durationMin = option.estimated_duration_min || 30;
+    const endsAt = new Date(booking.scheduled_at.getTime() + durationMin * 60000);
+    const providerName =
+      option.provider?.name ||
+      (option.mode === TransportMode.TRANSIT ? 'City Public Transit' : 'Partner Taxi');
+
+    await getEventBus().publish<BookingConfirmedPayload>({
+      id: randomUUID(),
+      name: BOOKING_CONFIRMED_EVENT,
+      timestamp: new Date().toISOString(),
+      correlationId,
+      payload: {
+        bookingType: 'transport',
+        bookingId: booking.id,
+        userId,
+        tripId: booking.trip_id,
+        status: booking.status,
+        startsAt: booking.scheduled_at,
+        endsAt,
+        title: `Transfer: ${providerName} (${option.mode})`,
+        locationLat: option.origin_lat ?? null,
+        locationLng: option.origin_lng ?? null,
+        address:
+          input.notes ||
+          (option.origin_lat != null && option.origin_lng != null
+            ? `Pick-up from ${option.origin_lat.toFixed(4)}, ${option.origin_lng.toFixed(4)}`
+            : 'Pick-up point'),
+      },
+    });
+
     return {
       handoff: false,
       booking,
@@ -346,6 +385,19 @@ export class TransportService {
       beforeState: { status: booking.status },
       afterState: { status: TransportBookingStatus.CANCELLED, reason: reason || null },
       correlationId,
+    });
+
+    await getEventBus().publish<BookingCancelledPayload>({
+      id: randomUUID(),
+      name: BOOKING_CANCELLED_EVENT,
+      timestamp: new Date().toISOString(),
+      correlationId,
+      payload: {
+        bookingType: 'transport',
+        bookingId,
+        userId,
+        tripId: updated.trip_id,
+      },
     });
 
     return updated;

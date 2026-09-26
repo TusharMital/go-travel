@@ -251,6 +251,7 @@ function Dashboard() {
             {activeTab === 'transport' && (
               <TransportDiscovery
                 initialOrigin={transportSearchOrigin}
+                tripId={selectedTripId || undefined}
                 onBookingSuccess={() => setActiveTab('transport_bookings')}
               />
             )}

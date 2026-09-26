@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.6: Booking Orchestration / Itinerary Linking**:
+  - Event Bus abstraction (`IEventBus`) and in-process implementation (`InProcessEventBus`) with strongly typed domain events (`DomainEvent<T>`), structured for zero-effort transition to distributed message queues (BullMQ/Redis/RabbitMQ).
+  - Event-driven orchestration: Confirmation of a storage booking or direct transport booking emits `booking-confirmed` which triggers `BookingOrchestrator` to auto-insert or update corresponding `ItineraryItem` (`type: 'storage'` or `type: 'transport'`) on the linked trip.
+  - Automatic trip resolution: When a booking does not supply an explicit `trip_id`, the orchestrator inspects the traveler's active trips for matching date windows and automatically associates the booking and inserts the itinerary stop.
+  - Idempotent stop updates: Repeating confirmation or updating an existing booking updates the existing `ItineraryItem` in place rather than creating duplicate stops.
+  - Cancellation orchestration: When a storage or transport booking is cancelled, `booking-cancelled` event unlinks and removes the itinerary stop so the itinerary gap reopens, and emits `itinerary-updated`.
+  - Immutable audit logging for `ITINERARY_ITEM_AUTO_LINKED`, `ITINERARY_ITEM_AUTO_UPDATED`, and `ITINERARY_ITEM_AUTO_UNLINKED`.
+  - Frontend integration:
+    - `TripTimeline`: Visual `[⚡ Auto-Linked Storage]` and `[⚡ Auto-Linked Ride]` badges with direct link cues.
+    - Seamless `tripId` forwarding from itinerary gap actions into `StorageDiscovery` and `TransportDiscovery`.
+  - Automated tests in `apps/api/tests/orchestration.test.ts` (8 tests covering storage auto-insertion, transport auto-insertion, duplicate update prevention, auto-trip detection, graceful fallback, cancellation unlinking, and full API integration).
 - **Module 4.5: Transport Module (Multi-Modal Discovery, Direct Booking & Partner Handoff)**:
   - Multi-modal discovery endpoint: `GET /api/v1/transport/options` calculating real-time quotes given origin/destination coordinates and optional departure time/mode filters.
   - Step-by-step public transit directions (`TransitRouteStep`) with walking, metro line transfers, and duration/distance metrics via deterministic `MockTransportAdapter`.

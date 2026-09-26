@@ -28,6 +28,8 @@ export interface ItineraryItem {
   starts_at: string;
   ends_at: string;
   sequence_order: number;
+  linked_storage_booking_id?: string | null;
+  linked_transport_booking_id?: string | null;
 }
 
 export interface ItineraryGap {
@@ -321,6 +323,16 @@ export const TripTimeline: React.FC<TripTimelineProps> = ({
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                           {item.type}
                         </span>
+                        {item.linked_storage_booking_id && (
+                          <span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-200 flex items-center gap-1">
+                            <Luggage className="w-3 h-3" /> Auto-Linked Storage
+                          </span>
+                        )}
+                        {item.linked_transport_booking_id && (
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
+                            <Car className="w-3 h-3" /> Auto-Linked Ride
+                          </span>
+                        )}
                         <span className="text-slate-300">•</span>
                         <span className="text-xs font-semibold text-slate-700">{dateFormatted}</span>
                       </div>

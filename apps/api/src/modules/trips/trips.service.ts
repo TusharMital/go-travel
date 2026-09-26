@@ -341,9 +341,12 @@ export class TripsService {
       return gaps;
     }
 
-    // Existing active storage bookings for this trip
+    // Existing active storage & transport bookings for this trip
     const activeStorageBookings = trip.storage_bookings.filter(
       (b) => b.status === 'confirmed' || b.status === 'checked_in'
+    );
+    const activeTransportBookings = trip.transport_bookings.filter(
+      (b) => b.status === 'confirmed'
     );
 
     // Format minutes helper
@@ -420,6 +423,27 @@ export class TripsService {
 
         const hasStorage = hasStorageItem || hasStorageBooking;
 
+        const hasTransportItem = items.some(
+          (item) =>
+            (item.type === ItineraryItemType.TRANSPORT || (item.type as string).toLowerCase() === 'transport') &&
+            new Date(item.starts_at).getTime() >= currentEnd - 1800000 &&
+            new Date(item.starts_at).getTime() <= nextStart + 1800000
+        );
+
+        const hasTransportBooking = activeTransportBookings.some((booking) => {
+          const tTime = new Date(booking.scheduled_at).getTime();
+          return tTime >= currentEnd - 1800000 && tTime <= nextStart + 1800000;
+        });
+
+        const hasTransport = hasTransportItem || hasTransportBooking;
+
+        let recommendationAction: 'ALL_SET' | 'BOOK_STORAGE' | 'BOOK_TRANSPORT' = 'ALL_SET';
+        if (!hasStorage) {
+          recommendationAction = 'BOOK_STORAGE';
+        } else if (!hasTransport) {
+          recommendationAction = 'BOOK_TRANSPORT';
+        }
+
         // Preferred location is arrival point or hotel point
         const lat = current.location_lat || next.location_lat || 52.520008;
         const lng = current.location_lng || next.location_lng || 13.404954;
@@ -440,8 +464,8 @@ export class TripsService {
             address,
           },
           hasStorageBooked: hasStorage,
-          hasTransportBooked: false,
-          recommendationAction: hasStorage ? 'ALL_SET' : 'BOOK_STORAGE',
+          hasTransportBooked: hasTransport,
+          recommendationAction,
           previousItemId: current.id,
           nextItemId: next.id,
         });

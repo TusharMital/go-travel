@@ -21,6 +21,7 @@ export const CreateTransportBookingDto = z.object({
   dest_lat: z.number().min(-90).max(90).optional(),
   dest_lng: z.number().min(-180).max(180).optional(),
   currency: z.string().default('USD'),
+  notes: z.string().optional(),
 });
 
 export type CreateTransportBookingInput = z.infer<typeof CreateTransportBookingDto>;

@@ -15,6 +15,14 @@ import {
 } from './storage.dto.js';
 import { PaginationParams, formatPaginatedResponse } from '../../utils/pagination.js';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'crypto';
+import {
+  getEventBus,
+  BOOKING_CONFIRMED_EVENT,
+  BOOKING_CANCELLED_EVENT,
+  BookingConfirmedPayload,
+  BookingCancelledPayload,
+} from '../events/index.js';
 
 export class StorageService {
   /**
@@ -466,6 +474,27 @@ export class StorageService {
       correlationId,
     });
 
+    // 5. Emit domain event for booking orchestration (booking-confirmed -> itinerary-updated)
+    await getEventBus().publish<BookingConfirmedPayload>({
+      id: randomUUID(),
+      name: BOOKING_CONFIRMED_EVENT,
+      timestamp: new Date().toISOString(),
+      correlationId,
+      payload: {
+        bookingType: 'storage',
+        bookingId: booking.id,
+        userId,
+        tripId: booking.trip_id,
+        status: booking.status,
+        startsAt: booking.drop_off_at,
+        endsAt: booking.pick_up_at,
+        title: `Luggage Storage: ${location.name} (${booking.bag_count} bags)`,
+        locationLat: location.lat,
+        locationLng: location.lng,
+        address: location.address,
+      },
+    });
+
     return {
       ...booking,
       payment: paymentResult,
@@ -572,6 +601,21 @@ export class StorageService {
       afterState: { status: targetStatus, reason: cancellationReason || null },
       correlationId,
     });
+
+    if (targetStatus === StorageBookingStatus.CANCELLED) {
+      await getEventBus().publish<BookingCancelledPayload>({
+        id: randomUUID(),
+        name: BOOKING_CANCELLED_EVENT,
+        timestamp: new Date().toISOString(),
+        correlationId,
+        payload: {
+          bookingType: 'storage',
+          bookingId,
+          userId,
+          tripId: updated.trip_id,
+        },
+      });
+    }
 
     return updated;
   }

@@ -1544,6 +1544,14 @@ components:
           format: date-time
         sequence_order:
           type: integer
+        linked_storage_booking_id:
+          type: string
+          format: uuid
+          nullable: true
+        linked_transport_booking_id:
+          type: string
+          format: uuid
+          nullable: true
 
     ItineraryGap:
       type: object

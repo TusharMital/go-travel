@@ -44,6 +44,7 @@ interface TransportDiscoveryProps {
   initialOrigin?: { lat: number; lng: number; label?: string };
   initialDestination?: { lat: number; lng: number; label?: string };
   onBookingSuccess?: () => void;
+  tripId?: string;
 }
 
 const PRESET_LOCATIONS = [
@@ -58,6 +59,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
   initialOrigin,
   initialDestination,
   onBookingSuccess,
+  tripId,
 }) => {
   // Coordinates and query states
   const [originLat, setOriginLat] = useState<number>(initialOrigin?.lat ?? 52.5251);
@@ -157,6 +159,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
       const idempotencyKey = `idem-tb-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       const payload = {
         transport_option_id: bookingModalOption.id,
+        trip_id: tripId || undefined,
         origin_lat: originLat,
         origin_lng: originLng,
         dest_lat: destLat,

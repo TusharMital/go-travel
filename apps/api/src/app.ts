@@ -9,8 +9,12 @@ import { tripsRouter } from './modules/trips/trips.routes.js';
 import { locationRouter } from './modules/location/location.routes.js';
 import { storageRouter } from './modules/storage/storage.routes.js';
 import { transportRouter } from './modules/transport/transport.routes.js';
+import { initBookingOrchestrator } from './modules/orchestration/booking-orchestrator.js';
 
 export function createApp(): Application {
+  // Initialize domain event orchestrators
+  initBookingOrchestrator();
+
   const app = express();
 
   // Basic security and parsing

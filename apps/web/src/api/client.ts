@@ -7,7 +7,7 @@ export interface ApiError {
 }
 
 // In-memory demo store for seamless offline/preview UI testing
-let demoTrips = [
+let demoTrips: any[] = [
   {
     id: 'demo-trip-1',
     user_id: 'u-demo-1',
@@ -605,6 +605,12 @@ class ApiClient {
         const bookingId = parts[3];
         const b = demoStorageBookings.find((x) => x.id === bookingId);
         if (b) b.status = 'cancelled';
+        demoTrips.forEach((t) => {
+          t.itinerary_items = t.itinerary_items.filter(
+            (item: any) => item.linked_storage_booking_id !== bookingId
+          );
+          t._count.itinerary_items = t.itinerary_items.length;
+        });
         return { message: 'Booking cancelled.', status: 'cancelled' } as unknown as T;
       }
 
@@ -627,6 +633,27 @@ class ApiClient {
           location: loc,
         };
         demoStorageBookings.unshift(newBooking);
+
+        if (body.trip_id) {
+          const trip = demoTrips.find((t) => t.id === body.trip_id);
+          if (trip) {
+            trip.itinerary_items.push({
+              id: `itin-sb-${Date.now()}`,
+              trip_id: trip.id,
+              type: 'storage',
+              title: `Luggage Storage: ${loc.name} (${body.bag_count || 1} bags)`,
+              starts_at: body.drop_off_at,
+              ends_at: body.pick_up_at,
+              location_lat: loc.lat,
+              location_lng: loc.lng,
+              address: loc.address,
+              sequence_order: trip.itinerary_items.length + 1,
+              linked_storage_booking_id: newBooking.id,
+            });
+            trip._count.itinerary_items = trip.itinerary_items.length;
+          }
+        }
+
         return newBooking as unknown as T;
       }
 
@@ -667,6 +694,12 @@ class ApiClient {
         const bookingId = parts[3];
         const b = demoTransportBookings.find((x) => x.id === bookingId);
         if (b) b.status = 'cancelled';
+        demoTrips.forEach((t) => {
+          t.itinerary_items = t.itinerary_items.filter(
+            (item: any) => item.linked_transport_booking_id !== bookingId
+          );
+          t._count.itinerary_items = t.itinerary_items.length;
+        });
         return { message: 'Transport booking cancelled.', status: 'cancelled' } as unknown as T;
       }
 
@@ -689,6 +722,31 @@ class ApiClient {
           },
         };
         demoTransportBookings.unshift(newBooking);
+
+        if (body.trip_id) {
+          const trip = demoTrips.find((t) => t.id === body.trip_id);
+          if (trip) {
+            const endsAt = new Date(
+              new Date(body.scheduled_at || Date.now()).getTime() +
+                (opt.estimated_duration_min || 30) * 60000
+            ).toISOString();
+            trip.itinerary_items.push({
+              id: `itin-tb-${Date.now()}`,
+              trip_id: trip.id,
+              type: 'transport',
+              title: `Transfer: ${opt.provider_name} (${opt.mode})`,
+              starts_at: body.scheduled_at || new Date().toISOString(),
+              ends_at: endsAt,
+              location_lat: body.origin_lat || 52.5251,
+              location_lng: body.origin_lng || 13.3694,
+              address: body.notes || 'Pick-up point',
+              sequence_order: trip.itinerary_items.length + 1,
+              linked_transport_booking_id: newBooking.id,
+            });
+            trip._count.itinerary_items = trip.itinerary_items.length;
+          }
+        }
+
         return newBooking as unknown as T;
       }
 
