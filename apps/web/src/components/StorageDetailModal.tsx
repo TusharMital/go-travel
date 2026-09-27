@@ -132,7 +132,7 @@ export const StorageDetailModal: React.FC<StorageDetailModalProps> = ({
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                 Distance
               </span>
-              <span className="text-lg font-black text-indigo-600">
+              <span className="text-lg font-black text-[#FF6B35] font-mono">
                 {location.distance_km ? `${location.distance_km} km` : 'Near you'}
               </span>
               <span className="text-[10px] text-slate-500 block">
@@ -336,7 +336,7 @@ export const StorageDetailModal: React.FC<StorageDetailModalProps> = ({
                 onClose();
                 onBookNow(location);
               }}
-              className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-lg shadow-indigo-600/20 transition-all flex items-center gap-2"
+              className="px-6 py-2.5 bg-[#FF6B35] hover:bg-[#E85D26] text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm shadow-md transition-all flex items-center gap-2"
             >
               <span>Book Storage Now</span>
             </button>

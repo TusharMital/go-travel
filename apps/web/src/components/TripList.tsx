@@ -107,7 +107,7 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
         </div>
         <button
           onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center space-x-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-indigo-200 hover:shadow transition-all self-start sm:self-auto"
+          className="inline-flex items-center space-x-2 px-4 py-2.5 bg-[#FF6B35] hover:bg-[#E85D26] text-white text-xs font-mono uppercase tracking-wider font-bold rounded-sm shadow-xs transition-all self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Plan New Trip</span>
@@ -118,23 +118,23 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-white rounded-2xl p-6 border border-slate-200 animate-pulse h-48" />
+            <div key={i} className="bg-white rounded-lg p-6 border border-slate-200 animate-pulse h-48" />
           ))}
         </div>
       ) : trips.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center max-w-lg mx-auto space-y-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
+        <div className="bg-[#FAF9F5] rounded-xl border border-dashed border-[#D5D2C7] p-12 text-center max-w-lg mx-auto space-y-4">
+          <div className="w-12 h-12 bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20 rounded-sm flex items-center justify-center mx-auto">
             <Plane className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-slate-900 text-base">No Trips Planned Yet</h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <h3 className="font-display font-bold text-slate-900 text-base">No Trips Planned Yet</h3>
+            <p className="text-xs text-slate-600 mt-1">
               Start planning your journey to uncover itinerary arrival gaps and book luggage storage seamlessly.
             </p>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-xl"
+            className="px-4 py-2 bg-[#FF6B35] hover:bg-[#E85D26] text-white text-xs font-mono uppercase tracking-wider font-bold rounded-sm shadow-xs"
           >
             Create Your First Trip
           </button>
@@ -156,23 +156,23 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
               <div
                 key={trip.id}
                 onClick={() => onSelectTrip(trip.id)}
-                className="group bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer flex flex-col justify-between"
+                className="group bg-[#FAF9F5] rounded-lg border border-[#D5D2C7] p-5 shadow-xs hover:border-[#FF6B35] transition-all cursor-pointer flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-sm bg-[#FF6B35]/15 text-[#FF6B35] border border-[#FF6B35]/30">
                       {trip.status}
                     </span>
                     <button
                       onClick={(e) => handleDeleteTrip(e, trip.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-rose-600 rounded-sm transition-colors"
                       title="Delete trip"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1 mb-2">
+                  <h3 className="text-base font-display font-bold text-slate-900 group-hover:text-[#FF6B35] transition-colors line-clamp-1 mb-2">
                     {trip.title}
                   </h3>
 
@@ -183,7 +183,7 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
                     <span className="font-semibold text-slate-800 truncate">{trip.destination_place}</span>
                   </div>
 
-                  <div className="flex items-center space-x-1.5 text-xs text-slate-500">
+                  <div className="flex items-center space-x-1.5 text-xs font-mono text-slate-500">
                     <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span>
                       {start} - {end}
@@ -191,12 +191,12 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs mt-4">
-                  <span className="text-slate-500 font-medium">
-                    {trip._count?.itinerary_items || 0} itinerary stops
+                <div className="pt-4 border-t border-[#E8ECF0] flex items-center justify-between text-xs mt-4">
+                  <span className="text-slate-500 font-mono text-[11px]">
+                    {trip._count?.itinerary_items || 0} STOPS LOGGED
                   </span>
-                  <span className="font-semibold text-indigo-600 flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                    <span>View Timeline</span>
+                  <span className="font-mono font-bold text-[#FF6B35] flex items-center gap-1 group-hover:translate-x-0.5 transition-transform text-xs">
+                    <span>VIEW TIMELINE</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
@@ -221,61 +221,61 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
 
             <form onSubmit={handleCreateTrip} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Trip Title</label>
+                <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">Trip Title</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Berlin Weekend Getaway"
-                  className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3.5 py-2 border border-slate-200 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Origin</label>
+                  <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">Origin</label>
                   <input
                     type="text"
                     required
                     value={origin}
                     onChange={(e) => setOrigin(e.target.value)}
                     placeholder="London LHR"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Destination</label>
+                  <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">Destination</label>
                   <input
                     type="text"
                     required
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
                     placeholder="Berlin BER"
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Start Date</label>
+                  <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">Start Date</label>
                   <input
                     type="date"
                     required
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">End Date</label>
+                  <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">End Date</label>
                   <input
                     type="date"
                     required
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-full px-3.5 py-2 border border-slate-200 rounded-sm text-xs focus:outline-none focus:ring-1 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
                   />
                 </div>
               </div>
@@ -284,14 +284,14 @@ export const TripList: React.FC<TripListProps> = ({ onSelectTrip }) => {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-mono font-semibold text-slate-600 hover:bg-slate-100 rounded-sm transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createLoading}
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition-all disabled:opacity-50"
+                  className="px-5 py-2 bg-[#FF6B35] hover:bg-[#E85D26] text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm shadow-xs transition-all disabled:opacity-50"
                 >
                   {createLoading ? 'Saving...' : 'Create Trip'}
                 </button>

@@ -120,10 +120,10 @@ export const MyStorageBookings: React.FC = () => {
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`px-3 py-1.5 text-xs font-bold rounded-xl capitalize transition-all ${
+              className={`px-3 py-1.5 text-xs font-mono font-bold rounded-sm uppercase tracking-wider transition-all ${
                 statusFilter === tab
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  ? 'bg-[#FF6B35] text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
               {tab.replace('_', ' ')}
@@ -134,13 +134,13 @@ export const MyStorageBookings: React.FC = () => {
 
       {feedback && (
         <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-center justify-between shadow-xs animate-in fade-in ${
+          className={`p-4 rounded-sm text-xs font-semibold flex items-center justify-between shadow-xs animate-in fade-in ${
             feedback.type === 'success'
               ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
               : 'bg-red-50 text-red-900 border border-red-200'
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 font-mono">
             {feedback.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
             ) : (
@@ -150,7 +150,7 @@ export const MyStorageBookings: React.FC = () => {
           </div>
           <button
             onClick={() => setFeedback(null)}
-            className="text-slate-400 hover:text-slate-700 ml-4 font-bold"
+            className="text-slate-400 hover:text-slate-700 ml-4 font-bold font-mono"
           >
             Dismiss
           </button>
@@ -159,9 +159,9 @@ export const MyStorageBookings: React.FC = () => {
 
       {/* Bookings List */}
       {loading ? (
-        <div className="py-16 text-center text-slate-400 text-xs">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-600" />
-          <span>Loading your storage reservations...</span>
+        <div className="py-16 text-center text-slate-400 text-xs font-mono">
+          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-[#FF6B35]" />
+          <span>Loading luggage storage reservations...</span>
         </div>
       ) : bookings.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center shadow-xs">
@@ -266,7 +266,7 @@ export const MyStorageBookings: React.FC = () => {
                           });
                         }}
                         title="Simulate partner checking out your bags to test post-checkout review flow"
-                        className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                        className="px-2.5 py-1.5 text-[11px] font-mono font-semibold text-slate-500 hover:text-[#FF6B35] hover:bg-slate-100 rounded-sm border border-slate-200 transition-colors"
                       >
                         Simulate Check-out
                       </button>

@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { api } from '../api/client';
 import { TransportReviewsModal } from './TransportReviewsModal';
+import { BaggageClaimPass } from './motion/BaggageClaimPass';
+import { SplitFlapTicker } from './motion/SplitFlapTicker';
 
 interface TransportOption {
   id: string;
@@ -185,15 +187,15 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case 'transit':
-        return <Train className="w-5 h-5 text-indigo-600" />;
+        return <Train className="w-5 h-5 text-[#FF6B35]" />;
       case 'taxi':
-        return <Car className="w-5 h-5 text-amber-600" />;
+        return <Car className="w-5 h-5 text-[#F2C94C]" />;
       case 'rideshare':
         return <Navigation className="w-5 h-5 text-slate-800" />;
       case 'bike':
-        return <Bike className="w-5 h-5 text-emerald-600" />;
+        return <Bike className="w-5 h-5 text-[#1E3A34]" />;
       default:
-        return <Car className="w-5 h-5 text-indigo-600" />;
+        return <Car className="w-5 h-5 text-[#FF6B35]" />;
     }
   };
 
@@ -201,7 +203,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
     switch (mode) {
       case 'transit':
         return (
-          <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+          <span className="bg-[#FF6B35]/15 text-[#FF6B35] border border-[#FF6B35]/30 text-[11px] font-mono px-2.5 py-0.5 rounded-sm font-bold uppercase tracking-wider">
             Public Transit
           </span>
         );
@@ -235,30 +237,32 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
   return (
     <div className="space-y-6">
       {/* Route & Search Header Card */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-5">
+      <div className="bg-[#141A20] text-[#E8ECF0] rounded-[4px] border border-[#263038] p-5 shadow-transit-card">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#263038] pb-4 mb-4">
           <div>
-            <div className="flex items-center space-x-2 text-indigo-600 mb-1">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-bold uppercase tracking-wider">Multi-Modal Last-Mile Transport</span>
+            <div className="flex items-center space-x-2 text-cargo-500 mb-1">
+              <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-[#1C242A] text-signal font-bold rounded-[2px] border border-[#263038]">
+                INTERMODAL DISPATCH
+              </span>
+              <span className="font-mono text-[10px] text-[#718096]">LAST-MILE TRANSIT GRID</span>
             </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Compare & Book Local Transport
+            <h2 className="text-xl font-display font-black text-[#E8ECF0] tracking-tight">
+              TRANSIT & TRANSFER ROUTING
             </h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Live quotes from partner taxis, city metro lines, and direct deep links to Uber & Lime.
+            <p className="text-xs text-[#718096] font-mono mt-0.5">
+              Live telemetry quotes from licensed taxis, city rapid transit, and direct partner handoffs.
             </p>
           </div>
 
           {/* Departure Time Selector */}
-          <div className="flex items-center space-x-2 bg-slate-50 border border-slate-200 rounded-2xl px-3 py-2 text-xs">
-            <Clock className="w-4 h-4 text-slate-400" />
-            <span className="font-semibold text-slate-600">Departure:</span>
+          <div className="flex items-center space-x-2 bg-[#0B0F12] border border-[#263038] rounded-[3px] px-3 py-2 text-xs font-mono">
+            <Clock className="w-4 h-4 text-signal" />
+            <span className="font-semibold text-[#718096]">DEPARTURE:</span>
             <input
               type="datetime-local"
               value={selectedTime}
               onChange={(e) => setSelectedTime(e.target.value)}
-              className="bg-transparent font-medium text-slate-800 focus:outline-none text-xs"
+              className="bg-transparent font-mono text-[#E8ECF0] focus:outline-none text-xs"
             />
           </div>
         </div>
@@ -266,15 +270,15 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
         {/* Origin / Destination Pickers with Presets */}
         <div className="grid grid-cols-1 md:grid-cols-11 gap-3 items-center">
           {/* Origin */}
-          <div className="md:col-span-5 bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 focus-within:border-indigo-500 transition-all">
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-              <MapPin className="w-3.5 h-3.5 text-indigo-500" />
-              Origin Pick-Up
+          <div className="md:col-span-5 bg-[#0B0F12] border border-[#263038] rounded-[3px] p-3 focus-within:border-cargo-500 transition-all font-mono">
+            <label className="text-[10px] font-bold text-cargo-500 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+              <MapPin className="w-3.5 h-3.5" />
+              ORIGIN WAYPOINT
             </label>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900 truncate">{originLabel}</span>
+              <span className="text-xs font-bold text-[#E8ECF0] truncate">{originLabel}</span>
               <select
-                className="bg-white border border-slate-200 rounded-lg text-xs py-1 px-2 text-slate-600 focus:outline-none focus:border-indigo-500"
+                className="bg-[#141A20] border border-[#263038] rounded-[2px] text-xs py-1 px-2 text-[#E8ECF0] focus:outline-none focus:border-cargo-500 font-mono"
                 value={originLabel}
                 onChange={(e) => {
                   const loc = PRESET_LOCATIONS.find((p) => p.label === e.target.value);
@@ -292,8 +296,8 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
                 ))}
               </select>
             </div>
-            <div className="text-[11px] text-slate-400 mt-1 font-mono">
-              {originLat.toFixed(4)}, {originLng.toFixed(4)}
+            <div className="text-[10px] text-[#718096] mt-1 font-mono">
+              LAT: {originLat.toFixed(4)} // LNG: {originLng.toFixed(4)}
             </div>
           </div>
 
@@ -301,7 +305,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
           <div className="md:col-span-1 flex justify-center">
             <button
               onClick={handleSwapLocations}
-              className="p-2.5 rounded-full bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-500 transition-colors border border-slate-200 shadow-2xs"
+              className="p-2 rounded-[3px] bg-[#141A20] hover:bg-[#1E262C] hover:text-cargo-500 text-[#718096] transition-colors border border-[#263038]"
               title="Swap Origin and Destination"
             >
               <RefreshCw className="w-4 h-4" />
@@ -309,15 +313,15 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
           </div>
 
           {/* Destination */}
-          <div className="md:col-span-5 bg-slate-50/80 border border-slate-200 rounded-2xl p-3.5 focus-within:border-indigo-500 transition-all">
-            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-              <MapPin className="w-3.5 h-3.5 text-rose-500" />
-              Destination Drop-Off
+          <div className="md:col-span-5 bg-[#0B0F12] border border-[#263038] rounded-[3px] p-3 focus-within:border-cargo-500 transition-all font-mono">
+            <label className="text-[10px] font-bold text-signal uppercase tracking-wider flex items-center gap-1.5 mb-1">
+              <MapPin className="w-3.5 h-3.5" />
+              DESTINATION TERMINAL
             </label>
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-slate-900 truncate">{destLabel}</span>
+              <span className="text-xs font-bold text-[#E8ECF0] truncate">{destLabel}</span>
               <select
-                className="bg-white border border-slate-200 rounded-lg text-xs py-1 px-2 text-slate-600 focus:outline-none focus:border-indigo-500"
+                className="bg-[#141A20] border border-[#263038] rounded-[2px] text-xs py-1 px-2 text-[#E8ECF0] focus:outline-none focus:border-cargo-500 font-mono"
                 value={destLabel}
                 onChange={(e) => {
                   const loc = PRESET_LOCATIONS.find((p) => p.label === e.target.value);
@@ -335,29 +339,29 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
                 ))}
               </select>
             </div>
-            <div className="text-[11px] text-slate-400 mt-1 font-mono">
-              {destLat.toFixed(4)}, {destLng.toFixed(4)}
+            <div className="text-[10px] text-[#718096] mt-1 font-mono">
+              LAT: {destLat.toFixed(4)} // LNG: {destLng.toFixed(4)}
             </div>
           </div>
         </div>
 
         {/* Mode Filter Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-5 mt-5 border-t border-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 mt-4 border-t border-[#263038] font-mono">
           <div className="flex flex-wrap items-center gap-1.5">
             {[
-              { id: 'all', label: 'All Modes' },
-              { id: 'transit', label: '🚇 Public Transit' },
-              { id: 'taxi', label: '🚕 Partner Taxi' },
-              { id: 'rideshare', label: '🚗 Rideshare' },
-              { id: 'bike', label: '🚲 Micro-mobility' },
+              { id: 'all', label: 'ALL MODES' },
+              { id: 'transit', label: '🚇 METRO / RAIL' },
+              { id: 'taxi', label: '🚕 PARTNER TAXI' },
+              { id: 'rideshare', label: '🚗 RIDESHARE' },
+              { id: 'bike', label: '🚲 MICRO-TRANSIT' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setSelectedMode(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-3 py-1.5 rounded-[2px] text-xs font-bold border transition-all ${
                   selectedMode === tab.id
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-cargo-500 text-white border-cargo-500 shadow-cargo-glow'
+                    : 'bg-[#0B0F12] border-[#263038] text-[#718096] hover:text-[#E8ECF0]'
                 }`}
               >
                 {tab.label}
@@ -368,7 +372,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
           <button
             onClick={fetchOptions}
             disabled={loading}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-200 transition-all disabled:opacity-50"
+            className="inline-flex items-center space-x-1.5 px-4 py-2 bg-[#FF6B35] hover:bg-[#E85D26] text-white rounded-sm text-xs font-mono font-bold uppercase tracking-wider shadow-xs transition-all disabled:opacity-50"
           >
             <Search className="w-3.5 h-3.5" />
             <span>{loading ? 'Refreshing...' : 'Update Quotes'}</span>
@@ -421,20 +425,20 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-400 space-y-3">
-            <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-500" />
-            <p className="text-sm font-medium">Calculating optimal transit routes and live quotes...</p>
+          <div className="bg-[#141A20] rounded-[4px] border border-[#263038] p-12 text-center text-[#718096] font-mono text-xs space-y-3">
+            <RefreshCw className="w-6 h-6 animate-spin mx-auto text-cargo-500" />
+            <p className="font-semibold">POLLING INTERMODAL TELEMETRY & DISPATCH METERS...</p>
           </div>
         ) : options.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-2">
-            <Car className="w-10 h-10 text-slate-300 mx-auto" />
-            <h4 className="text-base font-bold text-slate-800">No transport options found</h4>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Try adjusting your origin, destination, or mode filter to view more transport routes.
+          <div className="bg-[#141A20] rounded-[4px] border border-[#263038] p-12 text-center font-mono space-y-2">
+            <Car className="w-9 h-9 text-[#3A4854] mx-auto" />
+            <h4 className="text-sm font-bold text-[#E8ECF0]">NO ROUTING VECTORS FOUND</h4>
+            <p className="text-xs text-[#718096] max-w-sm mx-auto">
+              Modify designated origin/destination or select ALL MODES for complete transit sweep.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-1 gap-3.5">
             {options.map((opt) => {
               const hasSteps = opt.transit_steps && opt.transit_steps.length > 0;
               const isExpanded = expandedStepsId === opt.id;
@@ -442,43 +446,43 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
               return (
                 <div
                   key={opt.id}
-                  className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs hover:shadow-md hover:border-indigo-100 transition-all duration-200"
+                  className="bg-[#141A20] text-[#E8ECF0] rounded-[4px] border border-[#263038] p-4 shadow-transit-card hover:border-[#3A4854] transition-all select-none"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     {/* Provider Info & Mode */}
                     <div className="flex items-start space-x-3.5">
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
+                      <div className="p-2.5 bg-[#0B0F12] border border-[#263038] rounded-[3px] text-signal">
                         {getModeIcon(opt.mode)}
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
-                          <h4 className="font-bold text-slate-900 text-base">
+                          <h4 className="font-display font-extrabold text-[#E8ECF0] text-sm">
                             {opt.provider_name}
                           </h4>
                           {getModeBadge(opt.mode)}
                           <button
                             onClick={() => setReviewsModalOption(opt)}
-                            className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200/80 text-[11px] font-bold transition-all shadow-2xs"
+                            className="inline-flex items-center gap-1 text-signal font-mono text-[10px] font-bold bg-[#1C242A] px-2 py-0.5 rounded-[2px] border border-[#263038] hover:border-signal transition-colors"
                             title="View passenger ratings and reviews"
                           >
-                            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                            <Star className="w-3 h-3 fill-signal text-signal" />
                             <span>{(opt as any).rating || 4.8}</span>
-                            <span className="text-amber-600/80 font-normal">
+                            <span className="text-[#718096]">
                               ({(opt as any).review_count || 16})
                             </span>
                           </button>
                         </div>
-                        <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
+                        <div className="flex items-center space-x-3 text-xs font-mono text-[#718096] mt-1">
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-slate-400" />
-                            ~{opt.estimated_duration_min} mins
+                            <Clock className="w-3 h-3 text-[#718096]" />
+                            ~{opt.estimated_duration_min} MINS
                           </span>
-                          <span>•</span>
+                          <span>//</span>
                           <span>
                             {opt.is_direct_bookable ? (
-                              <span className="text-emerald-700 font-medium">Direct Platform Booking</span>
+                              <span className="text-concourse-400 font-bold">DIRECT LOCKABLE</span>
                             ) : (
-                              <span className="text-slate-600 font-medium">Deep Link Handoff</span>
+                              <span className="text-[#718096]">APP DEEP LINK</span>
                             )}
                           </span>
                         </div>
@@ -486,12 +490,16 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
                     </div>
 
                     {/* Price & Action */}
-                    <div className="flex items-center justify-between sm:justify-end space-x-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
-                      <div className="text-right">
-                        <div className="text-xl font-extrabold text-slate-900">
-                          {opt.currency === 'USD' ? '$' : opt.currency} {opt.estimated_price.toFixed(2)}
-                        </div>
-                        <span className="text-[11px] text-slate-400 font-medium">estimated total</span>
+                    <div className="flex items-center justify-between sm:justify-end space-x-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#263038]">
+                      <div className="text-right font-mono">
+                        <SplitFlapTicker
+                          value={opt.estimated_price.toFixed(2)}
+                          prefix="$"
+                          size="md"
+                        />
+                        <span className="text-[9px] text-[#718096] block uppercase tracking-wider mt-0.5">
+                          ESTIMATED FARE
+                        </span>
                       </div>
 
                       {opt.is_direct_bookable ? (
@@ -500,18 +508,18 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
                             setBookingModalOption(opt);
                             setBookingSuccess(null);
                           }}
-                          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm shadow-indigo-200 transition-all flex items-center space-x-1.5"
+                          className="px-3.5 py-2 bg-cargo-500 hover:bg-cargo-600 text-white rounded-[3px] font-mono text-xs font-bold shadow-cargo-glow transition-all flex items-center space-x-1.5 active:scale-95"
                         >
-                          <span>Book Direct</span>
+                          <span>BOOK RIDE</span>
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       ) : (
                         <button
                           onClick={() => handleHandoff(opt)}
-                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center space-x-1.5"
+                          className="px-3.5 py-2 bg-[#0B0F12] hover:bg-[#1E262C] text-[#E8ECF0] border border-[#263038] rounded-[3px] font-mono text-xs font-bold transition-all flex items-center space-x-1.5"
                         >
-                          <span>Open Partner App</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>OPEN APP</span>
+                          <ExternalLink className="w-3.5 h-3.5 text-signal" />
                         </button>
                       )}
                     </div>
@@ -519,38 +527,29 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
 
                   {/* Transit Steps Toggle if available */}
                   {hasSteps && (
-                    <div className="mt-4 pt-3 border-t border-slate-100">
+                    <div className="mt-3 pt-2.5 border-t border-[#263038]">
                       <button
                         onClick={() => setExpandedStepsId(isExpanded ? null : opt.id)}
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center space-x-1"
+                        className="font-mono text-[11px] font-bold text-signal hover:text-signal-400 flex items-center space-x-1"
                       >
-                        <span>{isExpanded ? 'Hide Step-by-Step Directions' : 'View Step-by-Step Directions'}</span>
-                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                        <span>{isExpanded ? '[-] HIDE INTERCHANGE WAYPOINTS' : '[+] VIEW INTERCHANGE WAYPOINTS'}</span>
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
 
                       {isExpanded && (
-                        <div className="mt-3 bg-slate-50/80 rounded-xl p-3.5 border border-slate-200/70 space-y-2.5 animate-in fade-in">
+                        <div className="mt-2.5 bg-[#0B0F12] rounded-[3px] p-3 border border-[#263038] space-y-2 font-mono animate-in fade-in">
                           {opt.transit_steps!.map((step, idx) => (
-                            <div key={idx} className="flex items-start space-x-3 text-xs">
-                              <div className="w-6 h-6 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">
+                            <div key={idx} className="flex items-start space-x-2.5 text-xs">
+                              <div className="w-5 h-5 rounded-[2px] bg-[#141A20] border border-[#263038] text-signal flex items-center justify-center font-bold text-[9px] shrink-0 mt-0.5">
                                 {idx + 1}
                               </div>
                               <div className="flex-1">
-                                <div className="font-semibold text-slate-800 flex items-center gap-2">
+                                <div className="font-medium text-[#E8ECF0] flex items-center gap-2">
                                   <span>{step.instruction}</span>
                                   {step.line && (
-                                    <span className="bg-indigo-100 text-indigo-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded">
+                                    <span className="px-1.5 py-0.2 bg-[#1C242A] text-signal font-bold rounded-[2px] text-[10px] border border-[#263038]">
                                       {step.line}
                                     </span>
-                                  )}
-                                </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                                  <span>{step.durationMinutes} mins</span>
-                                  {step.distanceMeters && (
-                                    <>
-                                      <span>•</span>
-                                      <span>{step.distanceMeters} m</span>
-                                    </>
                                   )}
                                 </div>
                               </div>
@@ -569,114 +568,107 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
 
       {/* Direct Booking Modal */}
       {bookingModalOption && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 space-y-5 animate-in zoom-in-95">
+        <div className="fixed inset-0 z-50 bg-[#0B0F12]/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#141A20] text-[#E8ECF0] rounded-[6px] max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-[#263038] space-y-4 animate-in zoom-in-95">
             {!bookingSuccess ? (
               <>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center justify-between border-b border-[#263038] pb-3">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-900">Confirm Transport Booking</h3>
-                    <p className="text-xs text-slate-500">Atomic instant reservation with partner confirmation</p>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 bg-[#1C242A] text-signal font-bold rounded-[2px] border border-[#263038]">
+                        CARRIER DISPATCH
+                      </span>
+                      <h3 className="font-display text-sm font-bold text-[#E8ECF0]">
+                        Confirm Transit Reservation
+                      </h3>
+                    </div>
+                    <p className="font-mono text-xs text-[#718096] mt-0.5">
+                      Direct carrier dispatch with atomic payment lock
+                    </p>
                   </div>
                   <button
                     onClick={() => setBookingModalOption(null)}
-                    className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                    className="p-1.5 rounded-[3px] text-[#718096] hover:text-[#E8ECF0] hover:bg-[#1E262C] transition-colors"
                   >
                     ✕
                   </button>
                 </div>
 
-                <div className="bg-indigo-50/60 border border-indigo-100 rounded-2xl p-4 space-y-2">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Provider:</span>
-                    <span className="font-bold text-slate-900">{bookingModalOption.provider_name}</span>
+                <div className="bg-[#0B0F12] border border-[#263038] rounded-[3px] p-3.5 space-y-2 font-mono text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#718096]">OPERATOR:</span>
+                    <span className="font-bold text-[#E8ECF0]">{bookingModalOption.provider_name}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Origin:</span>
-                    <span className="font-semibold text-slate-800 truncate max-w-[200px]">{originLabel}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#718096]">ORIGIN:</span>
+                    <span className="font-semibold text-[#E8ECF0] truncate max-w-[200px]">{originLabel}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Destination:</span>
-                    <span className="font-semibold text-slate-800 truncate max-w-[200px]">{destLabel}</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#718096]">DESTINATION:</span>
+                    <span className="font-semibold text-[#E8ECF0] truncate max-w-[200px]">{destLabel}</span>
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-500">Scheduled Departure:</span>
-                    <span className="font-semibold text-slate-800">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#718096]">DEPARTURE:</span>
+                    <span className="font-semibold text-[#E8ECF0]">
                       {new Date(selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(selectedTime).toLocaleDateString()})
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs border-t border-indigo-100 pt-2">
-                    <span className="font-bold text-slate-700">Total Price:</span>
-                    <span className="text-base font-extrabold text-indigo-700">
-                      ${bookingModalOption.estimated_price.toFixed(2)} USD
-                    </span>
+                  <div className="flex justify-between items-center border-t border-[#263038] pt-2">
+                    <span className="font-bold text-[#E8ECF0]">CAPTURED FARE:</span>
+                    <SplitFlapTicker
+                      value={bookingModalOption.estimated_price.toFixed(2)}
+                      prefix="$"
+                      suffix=" USD"
+                      size="md"
+                    />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Special Pick-up Instructions (Optional)
+                  <label className="block font-mono text-xs font-bold text-[#E8ECF0] mb-1">
+                    PICKUP TELEMETRY & NOTES (OPTIONAL)
                   </label>
                   <textarea
                     rows={2}
-                    placeholder="e.g. Flight LH123 arriving, meeting at Terminal 1 pick-up zone"
+                    placeholder="e.g. Flight LH123 arriving, meeting at Terminal 1 baggage claim curb"
                     value={bookingNotes}
                     onChange={(e) => setBookingNotes(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                    className="w-full bg-[#0B0F12] border border-[#263038] rounded-[3px] p-2.5 font-mono text-xs text-[#E8ECF0] focus:outline-none focus:border-cargo-500"
                   />
                 </div>
 
                 <div className="flex items-center space-x-3 pt-2">
                   <button
                     onClick={() => setBookingModalOption(null)}
-                    className="flex-1 py-3 border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl text-xs font-semibold transition-all"
+                    className="flex-1 py-3 border border-[#263038] text-[#718096] hover:text-[#E8ECF0] hover:bg-[#1E262C] rounded-[3px] font-mono text-xs font-semibold transition-all"
                   >
-                    Cancel
+                    ABORT
                   </button>
                   <button
                     onClick={handleConfirmDirectBooking}
                     disabled={bookingLoading}
-                    className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-200 transition-all disabled:opacity-50"
+                    className="flex-1 py-3 bg-cargo-500 hover:bg-cargo-600 text-white rounded-[3px] font-mono text-xs font-bold shadow-cargo-glow transition-all disabled:opacity-50 active:scale-95"
                   >
-                    {bookingLoading ? 'Processing...' : `Pay $${bookingModalOption.estimated_price.toFixed(2)}`}
+                    {bookingLoading ? 'DISPATCHING...' : `AUTHORIZE $${bookingModalOption.estimated_price.toFixed(2)}`}
                   </button>
                 </div>
               </>
             ) : (
-              <div className="text-center py-4 space-y-4">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900">Booking Confirmed!</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    Your transport booking reference is{' '}
-                    <span className="font-mono font-bold text-slate-800">{bookingSuccess.id}</span>
-                  </p>
-                </div>
-                <div className="bg-slate-50 rounded-2xl p-4 text-xs text-left space-y-1.5 border border-slate-100">
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Status:</span>
-                    <span className="font-bold text-emerald-700 uppercase">{bookingSuccess.status}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Provider:</span>
-                    <span className="font-semibold text-slate-800">{bookingModalOption.provider_name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-500">Paid:</span>
-                    <span className="font-bold text-slate-900">${bookingModalOption.estimated_price.toFixed(2)} USD</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => {
+              <div className="py-2">
+                <BaggageClaimPass
+                  bookingId={bookingSuccess.id}
+                  type="transport"
+                  serviceName={`${bookingModalOption.provider_name} [${bookingModalOption.mode.toUpperCase()}]`}
+                  locationAddress={`${originLabel} → ${destLabel}`}
+                  timeWindowStart={selectedTime}
+                  providerName={bookingModalOption.provider_name}
+                  totalPrice={bookingModalOption.estimated_price}
+                  currency={bookingModalOption.currency || 'USD'}
+                  onDone={() => {
                     setBookingModalOption(null);
                     setBookingSuccess(null);
                   }}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all"
-                >
-                  Done
-                </button>
+                />
               </div>
             )}
           </div>

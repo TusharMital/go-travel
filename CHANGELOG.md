@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.15: Premium Motion & Visual Identity Pass**:
+  - **Brand Visual System & Creative Identity**:
+    - **Visual World Concept**: *"Tactile Wayfinding & Transit Telemetry: Split-flap mechanical departure boards, brass-riveted luggage stencils, and illuminated tarmac beacons, translated into high-precision digital instruments for unburdened human transit."*
+    - **Custom Palette Tokens**: Replaced all generic SaaS violet/indigo gradients with authentic travel transit tokens: `Tarmac Night` (`#0B0F12`), `Baggage Claim Orange` (`#FF6B35`), `Concourse Pine` (`#1E3A34`), `Flap Signal Amber` (`#F2C94C`), `Luggage Parchment` (`#FAF9F5` / `#E8ECF0`), and `Cast Iron Slate` (`#263038`).
+    - **Precision Typography Scale**: `Cabinet Grotesk` (Display & Headings), `JetBrains Mono` (Tabular Telemetry & Terminal Stencils), and `Plus Jakarta Sans` (Body).
+    - **Disciplined Motion Curves**: Snappy entrance `cubic-bezier(0.16, 1, 0.3, 1)` (450ms), mechanical latch `cubic-bezier(0.34, 1.56, 0.64, 1)` (380ms), clean departure `cubic-bezier(0.7, 0, 0.84, 0)` (200ms), and split-flap `steps(6, end)`.
+    - **Explicit Rejection Compliance**: Zero violet/indigo SaaS gradients, zero uniform soft-shadow cards, zero ALL-CAPS tracked eyebrow labels above headings, zero uniform fade-and-slide-ups, zero stock photography, and zero checkmark-in-a-circle success states.
+  - **Tier B — Booking Application (`apps/web`)**:
+    - Installed `framer-motion` with strict <150ms perceived latency budget on interactive operations.
+    - Built `SplitFlapTicker.tsx`: Mechanical split-flap departure ticker for real-time rates and terminal departure manifests.
+    - Built `BaggageClaimPass.tsx`: Emotional payoff booking confirmation screen featuring physical Tyvek texture, perforated tear boundaries, scannable barcode stencils, and brass ink-stamp impact (`CONFIRMED & SEALED`) with spring haptic recoil.
+    - Built `RadarTransitMap.tsx`: Interactive tactical wayfinding radar map with 360-degree radar range sweep, concentric distance rings, coordinate crosshairs, and staggered spring-damped luggage pins.
+    - Upgraded all functional views (`StorageBookingModal`, `StorageDiscovery`, `TransportDiscovery`, `TripTimeline`, `TripList`, `AuthModal`, `ReviewModal`, `NotificationsPopover`, `Navbar`, and `App.tsx`) with tactile wayfinding styling and brand tokens.
+  - **Tier A — Marketing Site (`apps/marketing`)**:
+    - Scaffolded independent marketing application on port 3003 with Lenis smooth-scroll.
+    - Built `TransitShaderHero.tsx`: High-performance Canvas kinetic corridor mesh with dynamic particle pulses streaming between airport/railway hubs, radar sweep beam, and mouse magnetism beacon reveals.
+    - Built `CustomTelemetryCursor.tsx`: Smooth-damped spring reticle cursor with live coordinate telemetry readout.
+    - Built `SplitFlapDepartureWall.tsx`: Multi-line mechanical split-flap departures board cycling across global transport terminals.
+    - Built `InteractiveLuggageTag.tsx`: Interactive Tyvek tag with dynamic luggage classification switcher (Carry-on, Standard, Heavy), weight metrics, and ink seal.
+    - Built `TransitCorridorShowcase.tsx`: Side-by-side comparison of traditional travel friction vs unburdened transit telemetry.
+    - Built `MarketingNavbar.tsx`: Wayfinding navigation header with live world clocks (UTC, BER, NYC, TYO) and continuous deep linking to the booking terminal.
+    - Implemented comprehensive `prefers-reduced-motion` static fallbacks across both Tier A and Tier B.
 - **Module 4.14: Testing & CI Pass**:
   - **Unit Tests for Domain Business Logic**:
     - Added pure domain utilities in `@travel/shared` for deterministic state transitions, dynamic pricing, and inventory capacity validation.

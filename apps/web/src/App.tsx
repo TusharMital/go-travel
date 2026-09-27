@@ -9,6 +9,7 @@ import { StorageDiscovery } from './components/StorageDiscovery';
 import { MyStorageBookings } from './components/MyStorageBookings';
 import { TransportDiscovery } from './components/TransportDiscovery';
 import { MyTransportBookings } from './components/MyTransportBookings';
+import { SplitFlapTicker } from './components/motion/SplitFlapTicker';
 import {
   Luggage,
   MapPin,
@@ -121,33 +122,75 @@ function Dashboard() {
 
         {/* Hero Section for Guest or Overview */}
         {!isAuthenticated && (
-          <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 rounded-3xl text-white p-8 sm:p-12 shadow-2xl border border-slate-800">
-            <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center space-x-2 bg-indigo-500/20 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-semibold text-indigo-300 mb-6">
-                <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                <span>Unified Travel Workflow</span>
+          <div className="relative overflow-hidden bg-[#0B0F12] rounded-2xl text-white p-8 sm:p-12 shadow-2xl border border-[#263038]">
+            {/* Background telemetry crosshair pattern */}
+            <div
+              className="absolute inset-0 opacity-10 pointer-events-none"
+              style={{
+                backgroundImage:
+                  'radial-gradient(#E8ECF0 1px, transparent 1px), linear-gradient(to right, #263038 1px, transparent 1px)',
+                backgroundSize: '24px 24px, 48px 48px',
+              }}
+            />
+
+            <div className="relative z-10 max-w-3xl">
+              {/* Terminal Wayfinding Stencil Badge */}
+              <div className="inline-flex items-center space-x-2.5 bg-[#1E252B] border border-[#37444F] px-3.5 py-1.5 rounded-sm text-[11px] font-mono uppercase tracking-widest text-[#FF6B35] mb-6">
+                <span className="w-2 h-2 rounded-full bg-[#FF6B35] animate-ping" />
+                <span>TERMINAL WAYFINDING • ACTIVE TRANSIT CORRIDORS</span>
               </div>
-              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight text-white mb-4">
+
+              {/* Split-Flap Kinetic Departure Display */}
+              <div className="mb-4">
+                <div className="text-xs font-mono text-[#8C9BA8] uppercase tracking-wider mb-2">
+                  DISPATCH MANIFEST //
+                </div>
+                <div className="bg-[#050709] border border-[#263038] p-3 sm:p-4 rounded-lg inline-block">
+                  <SplitFlapTicker
+                    value="UNBURDENED TRANSIT"
+                    size="lg"
+                    className="text-[#FF6B35]"
+                  />
+                </div>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight font-display text-[#E8ECF0] mb-4">
                 Explore freely without luggage dragging you down.
               </h1>
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-8">
-                Bridge itinerary arrival & departure gaps. Discover verified secure luggage storage lockers, book last-mile transit, and navigate seamlessly in one place.
+              <p className="text-[#8C9BA8] text-sm sm:text-base leading-relaxed mb-8 max-w-2xl">
+                Bridge itinerary arrival & departure gaps. Secure verified luggage lockers with Tyvek baggage claim stubs, orchestrate last-mile transit, and navigate cities without deadweight.
               </p>
 
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap items-center gap-4">
                 <button
                   onClick={() => openAuth('register')}
-                  className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2"
+                  className="px-6 py-3.5 bg-[#FF6B35] hover:bg-[#E85D26] text-white font-mono font-bold text-xs uppercase tracking-wider rounded-sm shadow-md transition-all flex items-center space-x-2.5"
                 >
-                  <span>Get Started</span>
+                  <span>INITIALIZE ITINERARY</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => openAuth('login')}
-                  className="px-6 py-3.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700 font-semibold text-sm rounded-xl transition-all"
+                  className="px-6 py-3.5 bg-[#1E252B] hover:bg-[#263038] text-[#E8ECF0] border border-[#37444F] font-mono font-semibold text-xs uppercase tracking-wider rounded-sm transition-all"
                 >
-                  Demo Quick Logins
+                  STATION DEMO LOGINS
                 </button>
+              </div>
+
+              {/* Wayfinding Telemetry Bar */}
+              <div className="mt-10 pt-6 border-t border-[#263038] grid grid-cols-2 sm:grid-cols-3 gap-4 font-mono text-[11px] text-[#8C9BA8]">
+                <div>
+                  <span className="text-[#5A6874] block">TELEMETRY</span>
+                  <span className="text-[#E8ECF0] font-semibold">142 SECURE NODES</span>
+                </div>
+                <div>
+                  <span className="text-[#5A6874] block">HANDS-FREE DISPATCH</span>
+                  <span className="text-[#74D680] font-semibold">ONLINE & READY</span>
+                </div>
+                <div className="col-span-2 sm:col-span-1">
+                  <span className="text-[#5A6874] block">PAYMENT AUDIT</span>
+                  <span className="text-[#FF6B35] font-semibold">TYVEK SERIALIZED</span>
+                </div>
               </div>
             </div>
           </div>
@@ -157,78 +200,84 @@ function Dashboard() {
         {isAuthenticated && (
           <div className="space-y-6">
             {/* Top Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
+            <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-300 pb-3 font-mono">
               <button
                 onClick={() => {
                   setActiveTab('trips');
                   setSelectedTripId(null);
                 }}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'trips' && !selectedTripId
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">01/</span>
                 <Calendar className="w-3.5 h-3.5" />
-                <span>My Trips & Gaps</span>
+                <span>Itinerary & Gaps</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('storage')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'storage'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">02/</span>
                 <Luggage className="w-3.5 h-3.5" />
-                <span>Find Luggage Storage</span>
+                <span>Storage Hubs</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('transport')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'transport'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">03/</span>
                 <Navigation className="w-3.5 h-3.5" />
-                <span>Find Transport</span>
+                <span>Transit Corridors</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('bookings')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'bookings'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">04/</span>
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Storage Bookings</span>
+                <span>Luggage Passes</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('transport_bookings')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'transport_bookings'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">05/</span>
                 <Car className="w-3.5 h-3.5" />
-                <span>My Rides</span>
+                <span>Transit Log</span>
               </button>
 
               <button
                 onClick={() => setActiveTab('workbench')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-2 ${
+                className={`px-3.5 py-2 text-xs uppercase tracking-wider transition-all flex items-center space-x-2 border-b-2 ${
                   activeTab === 'workbench'
-                    ? 'bg-indigo-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100'
+                    ? 'border-[#FF6B35] bg-[#0B0F12] text-[#E8ECF0] font-bold shadow-xs'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'
                 }`}
               >
+                <span className="text-[10px] text-[#FF6B35]">06/</span>
                 <Shield className="w-3.5 h-3.5" />
                 <span>Session & Roles</span>
               </button>
@@ -296,38 +345,38 @@ function Dashboard() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Full Name</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Full Name</span>
                     <span className="font-semibold text-slate-900 text-sm mt-0.5 block">{user.full_name}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Email Address</span>
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Email Address</span>
                     <span className="font-semibold text-slate-900 text-sm mt-0.5 block">{user.email}</span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Assigned Role</span>
-                    <span className="font-semibold uppercase tracking-wider text-indigo-600 text-xs mt-1 block">
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Assigned Role</span>
+                    <span className="font-semibold uppercase tracking-wider text-[#FF6B35] text-xs mt-1 block">
                       {user.role}
                     </span>
                   </div>
-                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <span className="text-slate-400 block font-medium">Verification State</span>
-                    <span className={`font-semibold text-xs mt-1 block ${user.email_verified_at ? 'text-emerald-600' : 'text-amber-600'}`}>
-                      {user.email_verified_at ? '✓ Verified' : '⚠ Unverified'}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <span className="text-slate-400 block text-[10px] uppercase tracking-wider">Verification State</span>
+                    <span className={`font-semibold text-xs mt-1 block ${user.email_verified_at ? 'text-emerald-600' : 'text-[#F2C94C]'}`}>
+                      {user.email_verified_at ? '✓ VERIFIED' : '⚠ UNVERIFIED'}
                     </span>
                   </div>
                 </div>
 
                 {/* Portal Deep Links */}
                 {(user.role === 'partner_storage' || user.role === 'partner_transport' || user.role === 'admin') && (
-                  <div className="pt-2 flex flex-wrap gap-3">
+                  <div className="pt-2 flex flex-wrap gap-3 font-mono">
                     {(user.role === 'partner_storage' || user.role === 'partner_transport') && (
                       <a
                         href="http://localhost:3001"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3.5 py-2 rounded-xl border border-emerald-200"
+                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-[#1E3A34]/10 text-[#1E3A34] hover:bg-[#1E3A34]/20 px-3.5 py-2 rounded-sm border border-[#1E3A34]/30"
                       >
                         <span>Open Partner Portal (:3001)</span>
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -338,7 +387,7 @@ function Dashboard() {
                         href="http://localhost:3002"
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-amber-50 text-amber-800 hover:bg-amber-100 px-3.5 py-2 rounded-xl border border-amber-200"
+                        className="inline-flex items-center space-x-1.5 text-xs font-semibold bg-amber-50 text-amber-900 hover:bg-amber-100 px-3.5 py-2 rounded-sm border border-amber-300"
                       >
                         <span>Open Admin Console (:3002)</span>
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -349,55 +398,55 @@ function Dashboard() {
 
                 {/* Module 4.8 Partner Status & Notification Sandbox */}
                 <div className="pt-4 border-t border-slate-100">
-                  <div className="bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl p-5 shadow-sm space-y-4">
+                  <div className="bg-[#0B0F12] text-white rounded-lg p-5 border border-[#263038] space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2.5">
-                        <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400">
+                        <div className="p-2 bg-[#1E252B] border border-[#37444F] rounded-sm text-[#FF6B35]">
                           <Shield className="w-5 h-5" />
                         </div>
                         <div>
-                          <h4 className="text-sm font-bold text-white">
-                            Partner Status Change Trigger (Module 4.8)
+                          <h4 className="text-sm font-mono font-bold text-[#E8ECF0]">
+                            PARTNER VERIFICATION TELEMETRY TRIGGER (MOD 4.8)
                           </h4>
-                          <p className="text-xs text-slate-300">
-                            Updates partner verification status, logs audit event, and dispatches data-driven <code className="font-mono text-indigo-300">PARTNER_STATUS_CHANGED</code> notification.
+                          <p className="text-xs text-[#8C9BA8]">
+                            Updates partner verification status, logs audit event, and dispatches data-driven <code className="font-mono text-[#F2C94C]">PARTNER_STATUS_CHANGED</code> notification.
                           </p>
                         </div>
                       </div>
-                      <span className="text-[10px] font-mono uppercase bg-indigo-500/30 text-indigo-200 px-2 py-0.5 rounded-full border border-indigo-400/30">
+                      <span className="text-[10px] font-mono uppercase bg-[#1E252B] text-[#FF6B35] px-2 py-0.5 rounded-sm border border-[#37444F]">
                         Admin / Dev Action
                       </span>
                     </div>
 
                     {partnerStatusMsg && (
-                      <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-2">
+                      <div className="p-3 bg-emerald-950/60 border border-emerald-800 rounded-sm text-xs text-emerald-300 flex items-center gap-2 font-mono">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span>{partnerStatusMsg}</span>
                       </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        <label className="block text-[10px] font-semibold text-[#8C9BA8] mb-1 uppercase tracking-wider">
                           Partner Account ID
                         </label>
                         <input
                           type="text"
                           value={partnerIdInput}
                           onChange={(e) => setPartnerIdInput(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                          className="w-full bg-[#1E252B] border border-[#37444F] rounded-sm px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
                           placeholder="partner-acc-1"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        <label className="block text-[10px] font-semibold text-[#8C9BA8] mb-1 uppercase tracking-wider">
                           New Status
                         </label>
                         <select
                           value={partnerStatusInput}
                           onChange={(e) => setPartnerStatusInput(e.target.value as any)}
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full bg-[#1E252B] border border-[#37444F] rounded-sm px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
                         >
                           <option value="verified">Verified (Approved)</option>
                           <option value="pending">Pending Review</option>
@@ -406,27 +455,27 @@ function Dashboard() {
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                        <label className="block text-[10px] font-semibold text-[#8C9BA8] mb-1 uppercase tracking-wider">
                           Verification Notes
                         </label>
                         <input
                           type="text"
                           value={partnerNotesInput}
                           onChange={(e) => setPartnerNotesInput(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          className="w-full bg-[#1E252B] border border-[#37444F] rounded-sm px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-[#FF6B35]"
                           placeholder="e.g. Identity and insurance verified"
                         />
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
-                      <p className="text-[11px] text-slate-400">
+                    <div className="flex items-center justify-between pt-1 font-mono">
+                      <p className="text-[11px] text-[#8C9BA8]">
                         Check the notification bell in the top navbar to see the rendered notification.
                       </p>
                       <button
                         onClick={handleUpdatePartnerStatus}
                         disabled={partnerStatusLoading}
-                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center space-x-1.5"
+                        className="px-4 py-2 bg-[#FF6B35] hover:bg-[#E85D26] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider rounded-sm shadow-xs transition-all flex items-center space-x-1.5"
                       >
                         {partnerStatusLoading ? (
                           <span>Updating...</span>
@@ -445,35 +494,47 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Feature Cards Grid */}
+        {/* Feature Cards Grid: Tactile Transit Instrument Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4 font-bold">
-              <Luggage className="w-6 h-6" />
+          <div className="bg-[#FAF9F5] p-6 rounded-lg border border-[#D5D2C7] shadow-xs relative overflow-hidden group hover:border-[#FF6B35] transition-all">
+            <div className="text-[10px] font-mono text-[#8C9BA8] uppercase tracking-widest mb-3 flex items-center justify-between">
+              <span>FACILITY // 01</span>
+              <span className="text-[#FF6B35] font-bold">ONLINE</span>
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Luggage Storage Discovery</h3>
+            <div className="w-10 h-10 bg-[#FF6B35]/10 text-[#FF6B35] border border-[#FF6B35]/20 rounded-sm flex items-center justify-center mb-4">
+              <Luggage className="w-5 h-5" />
+            </div>
+            <h3 className="font-display font-bold text-slate-900 text-base mb-1">Luggage Storage Discovery</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Find verified lockers and partner storage points near stations, landmarks, and airports. Real-time capacity check and instant confirmation.
+              Find verified lockers and partner storage points near stations, landmarks, and airports. Real-time capacity check, split-flap rates, and Tyvek baggage pass confirmation.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-4 font-bold">
-              <Calendar className="w-6 h-6" />
+          <div className="bg-[#FAF9F5] p-6 rounded-lg border border-[#D5D2C7] shadow-xs relative overflow-hidden group hover:border-[#1E3A34] transition-all">
+            <div className="text-[10px] font-mono text-[#8C9BA8] uppercase tracking-widest mb-3 flex items-center justify-between">
+              <span>CHRONO // 02</span>
+              <span className="text-[#1E3A34] font-bold">ANALYZER</span>
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Itinerary Gap Detection</h3>
+            <div className="w-10 h-10 bg-[#1E3A34]/10 text-[#1E3A34] border border-[#1E3A34]/20 rounded-sm flex items-center justify-center mb-4">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <h3 className="font-display font-bold text-slate-900 text-base mb-1">Itinerary Gap Detection</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Automatic analysis of check-in / check-out gaps in your trip timeline. Prompts you with storage recommendations right when you need them.
+              Automatic analysis of check-in / check-out gaps in your trip timeline. Prompts you with storage recommendations right when and where you need them.
             </p>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mb-4 font-bold">
-              <Car className="w-6 h-6" />
+          <div className="bg-[#FAF9F5] p-6 rounded-lg border border-[#D5D2C7] shadow-xs relative overflow-hidden group hover:border-[#F2C94C] transition-all">
+            <div className="text-[10px] font-mono text-[#8C9BA8] uppercase tracking-widest mb-3 flex items-center justify-between">
+              <span>DISPATCH // 03</span>
+              <span className="text-[#8F6B00] font-bold">MULTI-MODAL</span>
             </div>
-            <h3 className="font-bold text-slate-900 text-base mb-1">Last-Mile Transport Quotes</h3>
+            <div className="w-10 h-10 bg-[#F2C94C]/20 text-[#8F6B00] border border-[#F2C94C]/40 rounded-sm flex items-center justify-center mb-4">
+              <Car className="w-5 h-5" />
+            </div>
+            <h3 className="font-display font-bold text-slate-900 text-base mb-1">Last-Mile Transit Quotes</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Integrated multi-modal quotes: public transit, licensed city taxis, rideshare deep links, and micro-mobility bike shares.
+              Integrated multi-modal quotes: public transit routes, licensed city taxis, rideshare deep links, and micro-mobility bike shares.
             </p>
           </div>
         </div>

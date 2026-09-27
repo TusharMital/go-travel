@@ -166,7 +166,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
         {/* Booking Card Brief */}
         <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 flex items-center justify-between text-xs">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-white rounded-xl border border-slate-200/80 text-indigo-600 shadow-2xs">
+            <div className="p-2 bg-white rounded-sm border border-slate-200/80 text-[#FF6B35] shadow-2xs">
               {isStorage ? <Luggage className="w-4 h-4" /> : <Car className="w-4 h-4" />}
             </div>
             <div>
@@ -245,7 +245,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             <div className="pt-2">
               <button
                 onClick={onClose}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md transition-all"
+                className="px-6 py-2.5 bg-[#FF6B35] hover:bg-[#E85D26] text-white text-xs font-mono font-bold uppercase tracking-wider rounded-sm shadow-xs transition-all"
               >
                 Done
               </button>
@@ -319,7 +319,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 ))}
               </div>
 
-              <div className="text-xs font-extrabold text-indigo-700 h-5">
+              <div className="text-xs font-mono font-bold text-[#FF6B35] h-5">
                 {RATING_LABELS[activeRating] || ''}
               </div>
             </div>
@@ -327,7 +327,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
             {/* Written Comment Box */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <label className="text-xs font-mono font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
                   <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
                   <span>Written Review & Feedback (Optional)</span>
                 </label>
@@ -341,12 +341,12 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
                 placeholder="Share details about punctuality, friendliness of staff, cleanliness of facility, and ease of luggage handoff..."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-sm text-xs font-medium text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FF6B35] transition-all"
               />
             </div>
 
             {/* Security Guarantee Note */}
-            <div className="flex items-center space-x-2 text-[11px] text-slate-500 bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+            <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-500 bg-slate-50 px-3 py-2 rounded-sm border border-slate-200">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
                 Verified Buyer Review • Logged to immutable audit trail with ID #
@@ -359,14 +359,14 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all"
+                className="flex-1 py-2.5 border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-sm text-xs font-mono font-semibold uppercase tracking-wider transition-all"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50"
+                className="flex-1 py-2.5 bg-[#FF6B35] hover:bg-[#E85D26] text-white rounded-sm text-xs font-mono font-bold uppercase tracking-wider shadow-xs transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50"
               >
                 {loading ? (
                   <span>Submitting...</span>

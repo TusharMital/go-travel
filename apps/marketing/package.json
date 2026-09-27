@@ -1,17 +1,17 @@
 {
-  "name": "@travel/web",
+  "name": "@travel/marketing",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "vite --port 3003",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
-    "preview": "vite preview --port 3000"
+    "preview": "vite preview --port 3003"
   },
   "dependencies": {
-    "@travel/shared": "*",
-    "framer-motion": "^13.4.4",
+    "framer-motion": "^12.4.7",
+    "lenis": "^1.1.20",
     "lucide-react": "^0.475.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

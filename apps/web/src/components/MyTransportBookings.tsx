@@ -136,44 +136,44 @@ export const MyTransportBookings: React.FC = () => {
   const getModeIcon = (mode?: string) => {
     switch (mode) {
       case 'transit':
-        return <Train className="w-4 h-4 text-indigo-600" />;
+        return <Train className="w-4 h-4 text-[#FF6B35]" />;
       case 'taxi':
-        return <Car className="w-4 h-4 text-amber-600" />;
+        return <Car className="w-4 h-4 text-[#F2C94C]" />;
       case 'rideshare':
         return <Navigation className="w-4 h-4 text-slate-800" />;
       case 'bike':
-        return <Bike className="w-4 h-4 text-emerald-600" />;
+        return <Bike className="w-4 h-4 text-[#1E3A34]" />;
       default:
-        return <Car className="w-4 h-4 text-indigo-600" />;
+        return <Car className="w-4 h-4 text-[#FF6B35]" />;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#FAF9F5] rounded-xl border border-[#D5D2C7] p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2 text-indigo-600 mb-1">
+          <div className="flex items-center space-x-2 text-[#FF6B35] mb-1 font-mono">
             <ShieldCheck className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Transport Reservations</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+          <h2 className="text-2xl font-display font-extrabold text-slate-900 tracking-tight">
             My Transport Bookings
           </h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-slate-600 mt-1">
             Manage your direct transfers, verified taxi pickups, and transit pass reservations.
           </p>
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-2xl self-start sm:self-auto">
+        <div className="flex items-center space-x-1.5 bg-slate-200/70 p-1 rounded-sm self-start sm:self-auto font-mono">
           {(['all', 'confirmed', 'cancelled'] as const).map((filter) => (
             <button
               key={filter}
               onClick={() => setStatusFilter(filter)}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all capitalize ${
+              className={`px-3.5 py-1.5 text-xs font-bold rounded-sm transition-all uppercase tracking-wider ${
                 statusFilter === filter
-                  ? 'bg-white text-indigo-600 shadow-xs'
+                  ? 'bg-[#FF6B35] text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -203,9 +203,9 @@ export const MyTransportBookings: React.FC = () => {
 
       {/* Content list */}
       {loading ? (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center text-slate-400 space-y-3">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-indigo-500" />
-          <p className="text-sm font-medium">Loading your transport reservations...</p>
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 space-y-3 font-mono">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#FF6B35]" />
+          <p className="text-sm font-medium">Loading transit reservations...</p>
         </div>
       ) : bookings.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-3">
@@ -289,7 +289,7 @@ export const MyTransportBookings: React.FC = () => {
                           );
                         }}
                         title="Simulate ride completion to test post-checkout review flow"
-                        className="px-2.5 py-2 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                        className="px-2.5 py-2 text-[11px] font-mono font-semibold text-slate-500 hover:text-[#FF6B35] hover:bg-slate-100 rounded-sm border border-slate-200 transition-colors"
                       >
                         Simulate Completed
                       </button>
@@ -301,7 +301,7 @@ export const MyTransportBookings: React.FC = () => {
                           setCancellingBookingId(booking.id);
                           setCancelReason('');
                         }}
-                        className="px-3.5 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors border border-rose-100"
+                        className="px-3.5 py-2 text-xs font-mono font-bold uppercase tracking-wider text-rose-600 hover:text-white hover:bg-rose-600 rounded-sm transition-colors border border-rose-200"
                       >
                         Cancel Ride
                       </button>
@@ -310,7 +310,7 @@ export const MyTransportBookings: React.FC = () => {
                 </div>
 
                 {booking.notes && (
-                  <div className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
+                  <div className="mt-3 pt-3 border-t border-slate-100 text-xs font-mono text-slate-500">
                     <span className="font-semibold text-slate-700">Notes:</span> {booking.notes}
                   </div>
                 )}
@@ -323,14 +323,14 @@ export const MyTransportBookings: React.FC = () => {
       {/* Cancel Confirmation Modal */}
       {cancellingBookingId && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
-            <h3 className="text-base font-bold text-slate-900">Cancel Transport Reservation</h3>
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-2xl border border-[#D5D2C7] space-y-4 animate-in zoom-in-95">
+            <h3 className="text-base font-display font-bold text-slate-900">Cancel Transport Reservation</h3>
             <p className="text-xs text-slate-600">
               Are you sure you want to cancel this booking? A full refund will be initiated to your original payment method.
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-mono font-semibold text-slate-700 mb-1 uppercase tracking-wider">
                 Reason for cancellation (optional)
               </label>
               <input
@@ -338,7 +338,7 @@ export const MyTransportBookings: React.FC = () => {
                 placeholder="e.g. Schedule changed, took earlier train"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-slate-50 border border-slate-200 rounded-sm p-2.5 text-xs text-slate-800 focus:outline-none focus:border-[#FF6B35]"
               />
             </div>
 

@@ -96,15 +96,15 @@ export const TransportReviewsModal: React.FC<TransportReviewsModalProps> = ({
   const getModeIcon = (mode: string) => {
     switch (mode) {
       case 'transit':
-        return <Train className="w-5 h-5 text-indigo-600" />;
+        return <Train className="w-5 h-5 text-[#FF6B35]" />;
       case 'taxi':
-        return <Car className="w-5 h-5 text-amber-600" />;
+        return <Car className="w-5 h-5 text-[#F2C94C]" />;
       case 'rideshare':
         return <Navigation className="w-5 h-5 text-slate-800" />;
       case 'bike':
-        return <Bike className="w-5 h-5 text-emerald-600" />;
+        return <Bike className="w-5 h-5 text-[#1E3A34]" />;
       default:
-        return <Car className="w-5 h-5 text-indigo-600" />;
+        return <Car className="w-5 h-5 text-[#FF6B35]" />;
     }
   };
 
@@ -199,11 +199,11 @@ export const TransportReviewsModal: React.FC<TransportReviewsModalProps> = ({
 
             {loading ? (
               <div className="py-12 text-center text-slate-400 space-y-2">
-                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-indigo-500" />
-                <p className="text-xs">Loading passenger reviews...</p>
+                <RefreshCw className="w-6 h-6 animate-spin mx-auto text-[#FF6B35]" />
+                <p className="text-xs font-mono uppercase tracking-wider">Loading passenger reviews...</p>
               </div>
             ) : !reviewsData?.items || reviewsData.items.length === 0 ? (
-              <div className="text-center py-8 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+              <div className="text-center py-8 bg-slate-50 border border-slate-100 rounded-sm p-4">
                 <p className="text-xs text-slate-500">
                   No written reviews yet for this route option. Completed rides can be reviewed post-checkout!
                 </p>
@@ -213,11 +213,11 @@ export const TransportReviewsModal: React.FC<TransportReviewsModalProps> = ({
                 {reviewsData.items.map((rev) => (
                   <div
                     key={rev.id}
-                    className="p-4 bg-white border border-slate-200 rounded-2xl shadow-2xs space-y-2"
+                    className="p-4 bg-white border border-slate-200 rounded-sm shadow-2xs space-y-2"
                   >
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center space-x-2">
-                        <div className="w-7 h-7 bg-indigo-50 text-indigo-700 font-extrabold rounded-full flex items-center justify-center text-[11px] border border-indigo-100">
+                        <div className="w-7 h-7 bg-[#FF6B35]/10 text-[#FF6B35] font-mono font-bold rounded-sm flex items-center justify-center text-[11px] border border-[#FF6B35]/20">
                           {(rev.author?.fullName || 'T')[0]}
                         </div>
                         <span className="font-bold text-slate-900">
