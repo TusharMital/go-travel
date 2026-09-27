@@ -19,8 +19,11 @@
     "db:migrate": "npm run db:migrate --workspace=@travel/api",
     "db:generate": "npm run db:generate --workspace=@travel/api",
     "db:seed": "npm run db:seed --workspace=@travel/api",
-    "db:studio": "npm run db:studio --workspace=@travel/api"
+    "db:studio": "npm run db:studio --workspace=@travel/api",
+    "security:scan": "node scripts/security-scan.mjs",
+    "audit": "npm audit"
   },
+
   "devDependencies": {
     "concurrently": "^9.1.2",
     "typescript": "^5.7.3"

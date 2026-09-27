@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { notificationsController } from './notifications.controller.js';
 import { authenticate } from '../../middlewares/auth.middleware.js';
+import { validateRequest, IdParamDto } from '../../middlewares/validation.middleware.js';
+import { SendNotificationDto, UpdatePartnerStatusDto } from './notifications.dto.js';
 
 const router = Router();
 
@@ -12,14 +14,22 @@ router.get('/', (req, res, next) => {
   notificationsController.listMyNotifications(req, res).catch(next);
 });
 
-router.patch('/:id/read', (req, res, next) => {
-  notificationsController.markAsRead(req, res).catch(next);
-});
+router.patch(
+  '/:id/read',
+  validateRequest({ params: IdParamDto }),
+  (req, res, next) => {
+    notificationsController.markAsRead(req, res).catch(next);
+  }
+);
 
 // 2. Data-Driven Notification Dispatch
-router.post('/', (req, res, next) => {
-  notificationsController.sendNotification(req, res).catch(next);
-});
+router.post(
+  '/',
+  validateRequest({ body: SendNotificationDto }),
+  (req, res, next) => {
+    notificationsController.sendNotification(req, res).catch(next);
+  }
+);
 
 // 3. Scheduled Job Endpoint
 router.post('/jobs/pickup-reminders', (req, res, next) => {
@@ -27,16 +37,25 @@ router.post('/jobs/pickup-reminders', (req, res, next) => {
 });
 
 // 4. Partner Status Change (Admin)
-router.patch('/partners/:id/status', (req, res, next) => {
-  notificationsController.updatePartnerStatus(req, res).catch(next);
-});
+router.patch(
+  '/partners/:id/status',
+  validateRequest({ params: IdParamDto, body: UpdatePartnerStatusDto }),
+  (req, res, next) => {
+    notificationsController.updatePartnerStatus(req, res).catch(next);
+  }
+);
 
 export const notificationsRouter = router;
 
 // Also export standalone partners router for /api/v1/partners
 const partners = Router();
 partners.use(authenticate);
-partners.patch('/:id/status', (req, res, next) => {
-  notificationsController.updatePartnerStatus(req, res).catch(next);
-});
+partners.patch(
+  '/:id/status',
+  validateRequest({ params: IdParamDto, body: UpdatePartnerStatusDto }),
+  (req, res, next) => {
+    notificationsController.updatePartnerStatus(req, res).catch(next);
+  }
+);
 export const partnersRouter = partners;
+

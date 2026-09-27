@@ -138,3 +138,133 @@ export function canTransitionStorageBooking(
   const allowed = ALLOWED_STORAGE_TRANSITIONS[fromStatus] || [];
   return allowed.includes(toStatus);
 }
+
+export const ALLOWED_TRANSPORT_TRANSITIONS: Record<TransportBookingStatus, TransportBookingStatus[]> = {
+  [TransportBookingStatus.PENDING]: [
+    TransportBookingStatus.CONFIRMED,
+    TransportBookingStatus.CANCELLED,
+    TransportBookingStatus.FAILED,
+  ],
+  [TransportBookingStatus.CONFIRMED]: [
+    TransportBookingStatus.COMPLETED,
+    TransportBookingStatus.CANCELLED,
+  ],
+  [TransportBookingStatus.COMPLETED]: [],
+  [TransportBookingStatus.CANCELLED]: [],
+  [TransportBookingStatus.FAILED]: [],
+};
+
+export function canTransitionTransportBooking(
+  fromStatus: TransportBookingStatus,
+  toStatus: TransportBookingStatus
+): boolean {
+  const allowed = ALLOWED_TRANSPORT_TRANSITIONS[fromStatus] || [];
+  return allowed.includes(toStatus);
+}
+
+export const ALLOWED_PARTNER_TRANSITIONS: Record<PartnerStatus, PartnerStatus[]> = {
+  [PartnerStatus.PENDING]: [
+    PartnerStatus.VERIFIED,
+    PartnerStatus.REJECTED,
+  ],
+  [PartnerStatus.VERIFIED]: [
+    PartnerStatus.SUSPENDED,
+  ],
+  [PartnerStatus.SUSPENDED]: [
+    PartnerStatus.VERIFIED,
+  ],
+  [PartnerStatus.REJECTED]: [
+    PartnerStatus.PENDING,
+  ],
+};
+
+export function canTransitionPartnerStatus(
+  fromStatus: PartnerStatus,
+  toStatus: PartnerStatus
+): boolean {
+  const allowed = ALLOWED_PARTNER_TRANSITIONS[fromStatus] || [];
+  return allowed.includes(toStatus);
+}
+
+export const ALLOWED_TRIP_TRANSITIONS: Record<TripStatus, TripStatus[]> = {
+  [TripStatus.PLANNING]: [
+    TripStatus.CONFIRMED,
+    TripStatus.CANCELLED,
+  ],
+  [TripStatus.CONFIRMED]: [
+    TripStatus.IN_PROGRESS,
+    TripStatus.CANCELLED,
+  ],
+  [TripStatus.IN_PROGRESS]: [
+    TripStatus.COMPLETED,
+    TripStatus.CANCELLED,
+  ],
+  [TripStatus.COMPLETED]: [],
+  [TripStatus.CANCELLED]: [],
+};
+
+export function canTransitionTripStatus(
+  fromStatus: TripStatus,
+  toStatus: TripStatus
+): boolean {
+  const allowed = ALLOWED_TRIP_TRANSITIONS[fromStatus] || [];
+  return allowed.includes(toStatus);
+}
+
+// -------------------------------------------------------------
+// Pure Business Calculation Helpers: Pricing & Capacity
+// -------------------------------------------------------------
+
+/**
+ * Calculates luggage storage total price based on daily bag rate, bag count, and number of calendar days.
+ */
+export function calculateStoragePrice(
+  dailyRate: number,
+  bagCount: number,
+  dropOffDate: Date | string,
+  pickUpDate: Date | string
+): number {
+  if (bagCount <= 0 || dailyRate <= 0) return 0;
+  const start = new Date(dropOffDate);
+  const end = new Date(pickUpDate);
+
+  // Normalize to UTC calendar days
+  const startUtc = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
+  const endUtc = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+
+  const diffDays = Math.max(1, Math.round((endUtc - startUtc) / (1000 * 60 * 60 * 24)) + 1);
+  return Math.round(dailyRate * bagCount * diffDays * 100) / 100;
+}
+
+/**
+ * Calculates platform commission and net partner payout.
+ */
+export function calculatePartnerPayout(
+  grossAmount: number,
+  commissionPercent: number = 15
+): { platformFee: number; netPayout: number } {
+  if (grossAmount <= 0) return { platformFee: 0, netPayout: 0 };
+  const platformFee = Math.round(grossAmount * (commissionPercent / 100) * 100) / 100;
+  const netPayout = Math.round((grossAmount - platformFee) * 100) / 100;
+  return { platformFee, netPayout };
+}
+
+/**
+ * Calculates remaining available capacity.
+ */
+export function calculateAvailableCapacity(totalCapacity: number, bookedCapacity: number): number {
+  return Math.max(0, totalCapacity - bookedCapacity);
+}
+
+/**
+ * Verifies if inventory has sufficient capacity for requested bag count.
+ */
+export function hasSufficientCapacity(
+  totalCapacity: number,
+  bookedCapacity: number,
+  requestedBags: number
+): boolean {
+  if (requestedBags <= 0) return false;
+  return calculateAvailableCapacity(totalCapacity, bookedCapacity) >= requestedBags;
+}
+

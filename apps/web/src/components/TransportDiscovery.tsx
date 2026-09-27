@@ -18,8 +18,10 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  Star,
 } from 'lucide-react';
 import { api } from '../api/client';
+import { TransportReviewsModal } from './TransportReviewsModal';
 
 interface TransportOption {
   id: string;
@@ -83,6 +85,7 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
 
   // Direct Booking Modal state
   const [bookingModalOption, setBookingModalOption] = useState<TransportOption | null>(null);
+  const [reviewsModalOption, setReviewsModalOption] = useState<TransportOption | null>(null);
   const [bookingNotes, setBookingNotes] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState<any | null>(null);
@@ -448,11 +451,22 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
                         {getModeIcon(opt.mode)}
                       </div>
                       <div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <h4 className="font-bold text-slate-900 text-base">
                             {opt.provider_name}
                           </h4>
                           {getModeBadge(opt.mode)}
+                          <button
+                            onClick={() => setReviewsModalOption(opt)}
+                            className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200/80 text-[11px] font-bold transition-all shadow-2xs"
+                            title="View passenger ratings and reviews"
+                          >
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-500" />
+                            <span>{(opt as any).rating || 4.8}</span>
+                            <span className="text-amber-600/80 font-normal">
+                              ({(opt as any).review_count || 16})
+                            </span>
+                          </button>
                         </div>
                         <div className="flex items-center space-x-3 text-xs text-slate-500 mt-1">
                           <span className="flex items-center gap-1">
@@ -667,6 +681,14 @@ export const TransportDiscovery: React.FC<TransportDiscoveryProps> = ({
             )}
           </div>
         </div>
+      )}
+
+      {/* Transport Option Reviews Modal */}
+      {reviewsModalOption && (
+        <TransportReviewsModal
+          option={reviewsModalOption}
+          onClose={() => setReviewsModalOption(null)}
+        />
       )}
     </div>
   );

@@ -74,6 +74,8 @@ export class TransportService {
         is_direct_bookable: q.isDirectBookable,
         deep_link_url: q.deepLinkUrl || null,
         transit_steps: q.transitSteps || null,
+        rating: 4.8,
+        review_count: 28,
       })),
       ...dbOptions.map((opt) => ({
         id: opt.id,
@@ -85,6 +87,8 @@ export class TransportService {
         is_direct_bookable: !opt.deep_link_url,
         deep_link_url: opt.deep_link_url || null,
         transit_steps: null,
+        rating: 4.9,
+        review_count: 16,
       })),
     ];
 

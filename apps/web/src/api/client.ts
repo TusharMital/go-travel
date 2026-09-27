@@ -275,6 +275,21 @@ let demoTransportBookings = [
       estimated_duration_min: 15,
     },
   },
+  {
+    id: 'tb-demo-completed-1',
+    user_id: 'u-demo-1',
+    transport_option_id: 'prov-city-taxi',
+    status: 'completed',
+    scheduled_at: new Date(Date.now() - 24 * 3600000).toISOString(),
+    price_total: 24.5,
+    currency: 'USD',
+    idempotency_key: 'idem-tb-completed-1',
+    transport_option: {
+      provider: { name: 'Metropolitan Licensed Taxi' },
+      mode: 'taxi',
+      estimated_duration_min: 15,
+    },
+  },
 ];
 
 let demoStorageBookings = [
@@ -297,6 +312,59 @@ let demoStorageBookings = [
       lng: 13.4132,
       photos: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
     },
+  },
+  {
+    id: 'sb-demo-checked-out-1',
+    user_id: 'u-demo-1',
+    location_id: 'loc-berlin-alex',
+    status: 'checked_out',
+    bag_count: 1,
+    drop_off_at: new Date(Date.now() - 36 * 3600000).toISOString(),
+    pick_up_at: new Date(Date.now() - 30 * 3600000).toISOString(),
+    price_total: 6.5,
+    currency: 'USD',
+    idempotency_key: 'idem-demo-checked-out-1',
+    location: {
+      name: 'Alexanderplatz Luggage Hub',
+      address: 'Dircksenstrasse 2, 10178 Berlin',
+      city: 'Berlin',
+      lat: 52.5219,
+      lng: 13.4132,
+      photos: ['https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80'],
+    },
+  },
+];
+
+let demoReviews: any[] = [
+  {
+    id: 'rev-demo-1',
+    booking_id: 'sb-demo-past-1',
+    related_type: 'storage_location',
+    related_id: 'loc-berlin-alex',
+    rating: 5,
+    comment: 'Super easy check-in and pickup. Location right next to Alexanderplatz station!',
+    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    author: { id: 'u-demo-1', fullName: 'Elena Rostova' },
+  },
+  {
+    id: 'rev-demo-2',
+    booking_id: 'sb-demo-past-2',
+    related_type: 'storage_location',
+    related_id: 'loc-berlin-alex',
+    rating: 4,
+    comment: 'Friendly staff, luggage was safe and secure.',
+    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    author: { id: 'u-demo-2', fullName: 'Marcus Brody' },
+  },
+  {
+    id: 'rev-demo-3',
+    booking_id: 'tb-demo-past-1',
+    related_type: 'transport_option',
+    related_id: 'prov-city-taxi',
+    rating: 5,
+    comment: 'Driver was right on time at the terminal, spotless car and smooth ride.',
+    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    author: { id: 'u-demo-3', fullName: 'Sarah Chen' },
   },
 ];
 
@@ -976,6 +1044,154 @@ class ApiClient {
       } as unknown as T;
     }
 
+    // Reviews endpoints mock fallback
+    if (endpoint.startsWith('/reviews')) {
+      if (endpoint.startsWith('/reviews/bookings/') && options.method !== 'POST') {
+        const bookingId = endpoint.split('/')[3];
+        const existing = demoReviews.find((r) => r.booking_id === bookingId);
+        const sb = demoStorageBookings.find((b) => b.id === bookingId);
+        const tb = demoTransportBookings.find((b) => b.id === bookingId);
+        const isCompleted =
+          (sb && sb.status === 'checked_out') || (tb && tb.status === 'completed');
+
+        return {
+          status: 'success',
+          data: {
+            hasReviewed: Boolean(existing),
+            canReview: Boolean(isCompleted && !existing),
+            review: existing
+              ? {
+                  id: existing.id,
+                  bookingId: existing.booking_id,
+                  rating: existing.rating,
+                  comment: existing.comment,
+                  createdAt: existing.created_at,
+                }
+              : null,
+          },
+        } as unknown as T;
+      }
+
+      if (options.method === 'POST') {
+        const body = JSON.parse((options.body as string) || '{}');
+        const bookingId = body.bookingId || endpoint.split('/')[3];
+        const sb = demoStorageBookings.find((b) => b.id === bookingId);
+        const tb = demoTransportBookings.find((b) => b.id === bookingId);
+
+        if (!sb && !tb) {
+          const err: any = new Error(`Booking '${bookingId}' was not found.`);
+          err.code = 'BOOKING_NOT_FOUND';
+          throw err;
+        }
+
+        if (sb && sb.status !== 'checked_out') {
+          const err: any = new Error(
+            `Review submission requires a completed booking. Current status is '${sb.status}'. Luggage must be checked out before submitting a review.`
+          );
+          err.code = 'BOOKING_NOT_CHECKED_OUT';
+          throw err;
+        }
+
+        if (tb && tb.status !== 'completed') {
+          const err: any = new Error(
+            `Review submission requires a completed transport ride. Current status is '${tb.status}'.`
+          );
+          err.code = 'BOOKING_NOT_COMPLETED';
+          throw err;
+        }
+
+        const duplicate = demoReviews.find((r) => r.booking_id === bookingId);
+        if (duplicate) {
+          const err: any = new Error('A review has already been submitted for this booking.');
+          err.code = 'DUPLICATE_REVIEW';
+          throw err;
+        }
+
+        const relatedType = sb ? 'storage_location' : 'transport_option';
+        const relatedId = sb ? sb.location_id : tb!.transport_option_id;
+
+        const newReview = {
+          id: `rev-${Date.now()}`,
+          booking_id: bookingId,
+          related_type: relatedType,
+          related_id: relatedId,
+          rating: Number(body.rating),
+          comment: body.comment ? String(body.comment).trim() : null,
+          created_at: new Date().toISOString(),
+          author: { id: 'u-demo-1', fullName: localStorage.getItem('travel_user_name') || 'Elena Rostova' },
+        };
+        demoReviews.unshift(newReview);
+
+        return {
+          status: 'success',
+          message: 'Review submitted successfully. Thank you for your feedback!',
+          data: newReview,
+        } as unknown as T;
+      }
+
+      if (endpoint.startsWith('/reviews/storage/')) {
+        const locationId = endpoint.split('/')[3].split('?')[0];
+        const items = demoReviews.filter(
+          (r) => r.related_type === 'storage_location' && (r.related_id === locationId || locationId.includes('alex'))
+        );
+        const total = items.length;
+        const avg = total > 0 ? Number((items.reduce((s, r) => s + r.rating, 0) / total).toFixed(1)) : 4.8;
+        const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        items.forEach((r) => {
+          if (r.rating in breakdown) breakdown[r.rating]++;
+        });
+
+        return {
+          status: 'success',
+          data: items.map((r) => ({
+            id: r.id,
+            bookingId: r.booking_id,
+            rating: r.rating,
+            comment: r.comment,
+            createdAt: r.created_at,
+            author: r.author || { fullName: 'Traveler' },
+          })),
+          aggregates: {
+            averageRating: avg,
+            totalReviews: total || 24,
+            ratingBreakdown: total > 0 ? breakdown : { 5: 18, 4: 5, 3: 1, 2: 0, 1: 0 },
+          },
+          pagination: { total, page: 1, limit: 20, totalPages: 1 },
+        } as unknown as T;
+      }
+
+      if (endpoint.startsWith('/reviews/transport/')) {
+        const optionId = endpoint.split('/')[3].split('?')[0];
+        const items = demoReviews.filter(
+          (r) => r.related_type === 'transport_option'
+        );
+        const total = items.length;
+        const avg = total > 0 ? Number((items.reduce((s, r) => s + r.rating, 0) / total).toFixed(1)) : 4.9;
+        const breakdown: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        items.forEach((r) => {
+          if (r.rating in breakdown) breakdown[r.rating]++;
+        });
+
+        return {
+          status: 'success',
+          data: items.map((r) => ({
+            id: r.id,
+            bookingId: r.booking_id,
+            rating: r.rating,
+            comment: r.comment,
+            createdAt: r.created_at,
+            author: r.author || { fullName: 'Passenger' },
+          })),
+          aggregates: {
+            averageRating: avg,
+            totalReviews: total || 16,
+            ratingBreakdown: total > 0 ? breakdown : { 5: 12, 4: 3, 3: 1, 2: 0, 1: 0 },
+          },
+          pagination: { total, page: 1, limit: 20, totalPages: 1 },
+        } as unknown as T;
+      }
+    }
+
     return {} as T;
   }
 
@@ -1075,6 +1291,27 @@ class ApiClient {
       method: 'PATCH',
       body: JSON.stringify({ status, notes }),
     });
+  }
+
+  async submitReview(data: { bookingId: string; rating: number; comment?: string }): Promise<any> {
+    return this.request('/reviews', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getBookingReview(bookingId: string): Promise<any> {
+    return this.request(`/reviews/bookings/${bookingId}`);
+  }
+
+  async getStorageLocationReviews(locationId: string, page = 1, limit = 20): Promise<any> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return this.request(`/reviews/storage/${locationId}?${params.toString()}`);
+  }
+
+  async getTransportOptionReviews(optionId: string, page = 1, limit = 20): Promise<any> {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return this.request(`/reviews/transport/${optionId}?${params.toString()}`);
   }
 }
 

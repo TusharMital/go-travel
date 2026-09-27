@@ -134,6 +134,19 @@ export class AdminController {
       pagination: result.pagination,
     });
   }
+
+  /**
+   * GET /api/v1/admin/audit-logs/entity/:entityId
+   */
+  async getAuditLogsByEntityId(req: Request, res: Response): Promise<void> {
+    const { entityId } = req.params;
+    const result = await adminService.getAuditLogsByEntityId(entityId);
+    res.json({
+      status: 'success',
+      data: result,
+    });
+  }
 }
 
 export const adminController = new AdminController();
+

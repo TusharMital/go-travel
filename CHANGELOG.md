@@ -8,6 +8,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Module 4.14: Testing & CI Pass**:
+  - **Unit Tests for Domain Business Logic**:
+    - Added pure domain utilities in `@travel/shared` for deterministic state transitions, dynamic pricing, and inventory capacity validation.
+    - Built comprehensive unit test suite (`apps/api/tests/business-logic.unit.test.ts` - 19 tests) covering:
+      - State machines: Valid and forbidden lifecycle transitions for storage bookings (`canTransitionStorageBooking`), transport transfers (`canTransitionTransportBooking`), partner verification statuses (`canTransitionPartnerStatus`), and trip itineraries (`canTransitionTripStatus`).
+      - Pricing engine: Single and multi-day luggage storage calculations (`calculateStoragePrice`) and partner payout splits with platform commission (`calculatePartnerPayout`).
+      - Capacity safety: Available capacity checks with safety margins (`calculateAvailableCapacity`) and boundary checks (`hasSufficientCapacity`).
+  - **Full-Journey End-to-End Test Suite**:
+    - Created `apps/api/tests/full-journey.e2e.test.ts` covering the end-to-end traveler experience from registration to post-checkout review:
+      1. Register traveler account (negative: weak password rejected; positive: token issued).
+      2. Itinerary planning (negative: `end_date < start_date` rejected; positive: trip created).
+      3. Storage discovery & geo-proximity search with real-time capacity filters.
+      4. Idempotent storage booking reservation.
+      5. Payment intent creation and authorization capture.
+      6. Last-mile transport discovery and option selection.
+      7. Direct transport transfer booking with payment linkage.
+      8. Storage partner check-in and check-out (negative: review attempt prior to checkout rejected with `BOOKING_NOT_CHECKED_OUT`).
+      9. Post-checkout review submission (positive: 5-star review created; negative: duplicate review rejected with 409 `DUPLICATE_REVIEW`; verification of updated aggregates and audit trail).
+  - **Schema-Complete Prisma Mock Client Engine**:
+    - Engineered full-fidelity in-memory Prisma client mock using `vi.hoisted` implementing all models (`user`, `refreshToken`, `passwordResetToken`, `emailVerificationToken`, `partnerAccount`, `trip`, `itineraryItem`, `storageLocation`, `storageInventory`, `storageBooking`, `transportOption`, `transportProvider`, `transportBooking`, `payment`, `review`, `auditEvent`) and query methods (`findUnique`, `findFirst`, `findMany`, `create`, `update`, `updateMany`, `delete`, `count`, `aggregate`, `groupBy`, `$transaction`).
+  - **Platform-Wide Enum Casing Standardization**:
+    - Enforced strict lowercase enum values matching `schema.prisma` across all entities and adapters (`PaymentStatus`, `StorageBookingStatus`, `TransportBookingStatus`, `TripStatus`, `PartnerStatus`).
+    - Standardized `MockPaymentsAdapter` and adapter interfaces to support typed `PaymentStatus` constants (`intent`, `authorized`, `captured`, `refunded`, `failed`).
+  - **Monorepo Linting & Static Typing**:
+    - Added `"lint": "tsc --noEmit"` to all 5 workspaces (`@travel/shared`, `@travel/api`, `@travel/web`, `@travel/partner-portal`, `@travel/admin`).
+    - Verified `npm run lint` passes across all monorepo workspaces with 0 type errors.
+  - **Continuous Integration (GitHub Actions CI)**:
+    - Added `.github/workflows/ci.yml` running on every push and pull request to `main`/`master`.
+    - Automated pipeline stages: Lint & Typecheck, Unit & Integration Tests (204 passing tests across 15 test suites), Production Build (all 5 workspaces), and Dependency Vulnerability Scan.
+- **Module 4.13: Observability Pass**:
+  - **Structured JSON Logging with Correlation IDs**:
+    - Built contextual JSON logger (`apps/api/src/observability/logger.ts`) using Node.js `AsyncLocalStorage`.
+    - Every log output is a single-line valid JSON object containing: `timestamp`, `level`, `service`, `correlationId`, `message`, and contextual request metadata.
+    - Added `requestLoggingMiddleware` automatically tracing every incoming HTTP request and response duration in ms, logging at `INFO` (2xx/3xx), `WARN` (4xx), and `ERROR` (5xx).
+  - **Enriched Health Check Endpoint (`GET /health` & `/api/v1/health`)**:
+    - Live service liveness and readiness inspection returning status (`ok` or `degraded`), service identity, version, uptime in seconds, database connectivity check (`checks.database`), heap memory usage (`heapUsedMB`, `heapTotalMB`, `rssMB`), and real-time aggregate metrics summary.
+  - **Prometheus & JSON Metrics Endpoint (`GET /metrics` & `/api/v1/metrics`)**:
+    - In-memory metrics registry (`apps/api/src/observability/metrics.ts`) recording:
+      - `http_requests_total`: Total request counter partitioned by method, normalized route, and status code.
+      - `http_request_duration_ms`: Duration metrics (sum, count, and dynamic average).
+      - `http_request_duration_seconds`: Histogram with exponential duration buckets (5ms up to 5s).
+      - `http_errors_total` & `http_error_rate`: 4xx and 5xx error counters and dynamic error rate ratio.
+      - Runtime metrics: `process_uptime_seconds`, `nodejs_memory_bytes` (heap used, heap total, rss).
+    - Exposes standard Prometheus text exposition format by default (`text/plain; version=0.0.4; charset=utf-8`) for Prometheus/Datadog scraping, with optional JSON output (`?format=json` or `Accept: application/json`).
+  - **Queryable Audit Events by Entity ID for Support**:
+    - Added dedicated support endpoint `GET /api/v1/admin/audit-logs/entity/:entityId` authorized for `ADMIN` and `SUPPORT` roles.
+    - Retrieves the complete chronological lifecycle history for any booking, location, partner, or user entity, including actor details and before/after state diffs.
+    - Enhanced general audit log query endpoint (`GET /api/v1/admin/audit-logs?entityId=...`) with entity ID filtering.
+  - **Automated Observability Test Suite**:
+    - 15 comprehensive unit and integration tests in `apps/api/tests/observability.test.ts` verifying structured logging, correlation ID threading, health check, Prometheus/JSON metrics, and support entity audit queries (184 total tests passing across 13 test suites).
+- **Module 4.12: Security Pass**:
+
+  - **Input Validation on Every Endpoint**:
+    - Centralized `validateRequest` middleware enforcing strict Zod schema validation across `req.body`, `req.query`, and `req.params`.
+    - Added Zod DTO validation across all routes: `auth`, `storage`, `transport`, `trips`, `payments`, `partners`, `admin`, `reviews`, and `notifications`.
+    - Normalized `IdParamDto`, `UuidParamDto`, and `PaginationQueryDto` across path parameters and queries.
+    - Centralized `errorHandler` formatting `ZodError` as consistent HTTP 400 `VALIDATION_ERROR` with path and message details.
+  - **Rate Limiting**:
+    - In-memory sliding window rate limiter with standard HTTP headers (`X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After`).
+    - Login rate limiter (`loginRateLimiter`): 5 attempts per 15-minute window per IP/user to prevent brute-force attacks.
+    - Authentication rate limiter (`authRateLimiter`): 20 requests per 15-minute window for registration, password reset, and verification request flows.
+    - Booking rate limiter (`bookingRateLimiter`): 30 requests per minute on `POST /api/v1/storage/bookings` and `POST /api/v1/transport/bookings` to prevent automated inventory denial-of-service and race exploitation.
+    - Test-mode bypass header (`x-skip-rate-limit: true`) ensuring automated concurrency tests pass without rate-limit interference.
+  - **Helmet & HTTP Security Headers**:
+    - Configured strict HTTP security headers via `helmet`:
+      - `Content-Security-Policy`: Restricts scripts, styles, objects, and connect sources to origin and whitelisted domains.
+      - `X-Frame-Options: DENY`: Prevents clickjacking attacks.
+      - `X-Content-Type-Options: nosniff`: Prevents MIME-sniffing exploits.
+      - `Strict-Transport-Security`: HSTS enabled (max-age 1 year with subdomains and preload).
+      - `Referrer-Policy: strict-origin-when-cross-origin`: Restricts referrer information leakage.
+  - **Locked CORS Configuration**:
+    - Replaced wildcard CORS with strict origin whitelisting:
+      - Permits trusted origins (`http://localhost:3000` Web, `http://localhost:3001` Partner Portal, `http://localhost:3002` Admin Portal, and origins from `CORS_ALLOWED_ORIGINS`).
+      - Returns HTTP 403 `CORS_FORBIDDEN` for unauthorized cross-origin requests.
+      - Safe pass-through for non-browser server-to-server requests without Origin headers.
+  - **SQL Injection Protection Audit**:
+    - Audited full backend codebase: Verified zero raw SQL queries (`$queryRaw`, `$executeRaw`, string concatenation). All database interactions use Prisma Client's type-safe parameterized query engine.
+    - Validated through automated security tests injecting classic SQL injection vectors (`' OR 1=1 --`, `'; DROP TABLE users; --`, `' UNION SELECT ...`) across queries, route parameters, and request bodies.
+  - **Secrets Loaded from Environment Variables Only**:
+    - Zod schema validation in `apps/api/src/config/env.ts` verifying all secrets (`JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `DATABASE_URL`, `REDIS_URL`, provider keys).
+    - Production guard rejecting weak default placeholder secrets in production mode.
+  - **Dependency Vulnerability Scanner**:
+    - Created `scripts/security-scan.mjs` wrapper executing workspace-wide dependency vulnerability audits with formatted severity breakdown and fix advisories.
+    - Added `"security:scan"` and `"audit"` scripts to root and api `package.json`.
+  - **Automated Security Test Suite**:
+    - 18 new automated tests in `apps/api/tests/security.test.ts` covering headers, CORS whitelist, rate limiting, SQL injection defense, input validation, and environment safety (169 total tests passing across 12 test suites).
+- **Module 4.11: Reviews & Ratings**:
+
+  - **Post-Checkout Review Submission (1–5 stars + comment)**:
+    - Tied strictly to completed bookings: Validates that the booking exists, belongs to the authenticated traveler, and status is `checked_out` for luggage storage or `completed` for transport transfers (`BOOKING_NOT_CHECKED_OUT` / `BOOKING_NOT_COMPLETED` 400 rejection).
+    - Prevents premature review submissions before bag drop-off or before bag pickup checkout.
+    - Ownership validation: Rejects travelers attempting to review bookings made by another user (403 Forbidden).
+    - Duplicate review prevention: Prevents duplicate review submissions for the same booking (409 Conflict).
+    - Input validation: Enforces integer star ratings between 1 and 5 and optional comments up to 1,000 characters.
+    - Immutable audit trail: Automatically records `REVIEW_SUBMITTED` audit event with actor, rating, comment, and target entity references.
+  - **Aggregated Ratings & Reviews Retrieval Endpoints**:
+    - `POST /api/v1/reviews`: Submit review for completed booking.
+    - `POST /api/v1/reviews/bookings/:bookingId`: Booking-specific review submission alias.
+    - `GET /api/v1/reviews/bookings/:bookingId`: Check traveler review status and review details for a given booking.
+    - `GET /api/v1/reviews/storage/:locationId`: Retrieve verified reviews, computed average rating score, total review count, and 1-5 star breakdown distribution for storage locations.
+    - `GET /api/v1/reviews/transport/:optionId`: Retrieve verified reviews, computed average rating score, total review count, and star breakdown distribution for transport route options.
+  - **Frontend UI & User Experience (`@travel/web`)**:
+    - `ReviewModal` (`ReviewModal.tsx`): Interactive 5-star rating selector with hover preview and dynamic sentiment labels (Poor to Exceptional), written feedback textarea with live character counter, pre-condition validation warning banner if booking is not checked out, duplicate review viewer, and celebratory success state.
+    - `MyStorageBookings` (`MyStorageBookings.tsx`): Prominent "Review Experience" button on completed (`checked_out`) storage bookings opening `ReviewModal`, plus dev lifecycle simulator for testing post-checkout transitions end-to-end.
+    - `MyTransportBookings` (`MyTransportBookings.tsx`): Prominent "Review Ride" button on completed transport reservations opening `ReviewModal`, plus completion simulator.
+    - `StorageDetailModal` (`StorageDetailModal.tsx`): Comprehensive "Verified Customer Reviews" section with average rating out of 5.0, star distribution percentage bar chart, and verified passenger feedback list.
+    - `TransportDiscovery` (`TransportDiscovery.tsx`): Interactive average rating badges (e.g. ★ 4.8 (28)) on all route option cards, opening `TransportReviewsModal` to inspect ratings and reviews for transit/taxi/rideshare options.
+    - `StorageDiscovery` (`StorageDiscovery.tsx`): Average rating and review count badges on listing cards and interactive city radar map view.
+    - `apiClient` (`client.ts`): Typed API methods (`submitReview`, `getBookingReview`, `getStorageLocationReviews`, `getTransportOptionReviews`) with mock fallback store for offline/demo preview testing.
+  - **Automated Tests**:
+    - 11 unit and integration tests in `apps/api/tests/reviews.test.ts` covering post-checkout submission, check-out validation guards, duplicate rejection, non-owner rejection, rating bounds, unauthenticated rejection, and aggregate calculation (151 total passing tests across 11 test suites).
+  - **OpenAPI 3.0.3 Specification**:
+    - Updated `openapi.yaml` documenting all review endpoints and schemas.
 - **Module 4.10: Admin Panel**:
   - Separate frontend web application in `@travel/admin` (port 3002) for platform administrators and operational support staff, integrated with cross-portal navigation:
     - **Basic Metrics Dashboard** (`MetricsDashboardTab.tsx`):

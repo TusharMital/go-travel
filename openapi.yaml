@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Integrated Travel Support Platform API
   description: REST API for unified trip planning, luggage storage discovery & booking, and last-mile transport booking.
-  version: 1.0.0
+  version: 1.1.0
 servers:
   - url: http://localhost:4000/api/v1
     description: Local Development Server
@@ -10,9 +10,10 @@ paths:
   /health:
     get:
       summary: Health check endpoint
+      description: Returns service liveness, uptime, memory utilization, dependency checks, and aggregate metrics summary.
       responses:
         '200':
-          description: Service is healthy
+          description: Service and dependencies are healthy
           content:
             application/json:
               schema:
@@ -24,9 +25,65 @@ paths:
                   service:
                     type: string
                     example: integrated-travel-platform-api
+                  version:
+                    type: string
+                    example: 1.0.0
                   timestamp:
                     type: string
                     format: date-time
+                  uptimeSeconds:
+                    type: integer
+                    example: 3600
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: up
+                      memory:
+                        type: object
+                        properties:
+                          heapUsedMB:
+                            type: number
+                          heapTotalMB:
+                            type: number
+                          rssMB:
+                            type: number
+                  metricsSummary:
+                    type: object
+                    properties:
+                      totalRequests:
+                        type: integer
+                      totalErrors:
+                        type: integer
+                      errorRate:
+                        type: number
+                      avgDurationMs:
+                        type: number
+        '503':
+          description: Service or critical dependency is degraded
+
+  /metrics:
+    get:
+      summary: Prometheus and JSON application metrics
+      description: Exposes Prometheus-formatted counters, request-duration summaries, histograms, and error rates for Prometheus scraping, or JSON when requested.
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [prometheus, json]
+      responses:
+        '200':
+          description: Prometheus exposition format or JSON metrics summary
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+
 
   /auth/register:
     post:
@@ -831,6 +888,217 @@ paths:
         '200':
           description: Paginated audit events with before and after state diffs
 
+  /admin/audit-logs/entity/{entityId}:
+    get:
+      summary: Support and admin query to fetch all audit events for a specific entity ID
+      description: Returns the complete chronological lifecycle history for any booking, location, partner, or user entity with before/after state snapshots.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Target entity ID (e.g. booking ID, location ID, partner ID)
+      responses:
+        '200':
+          description: Entity audit events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      entityId:
+                        type: string
+                      total:
+                        type: integer
+                      events:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                            action:
+                              type: string
+                            entityType:
+                              type: string
+                            entityId:
+                              type: string
+                            actorUserId:
+                              type: string
+                            actor:
+                              type: object
+                            beforeState:
+                              type: object
+                            afterState:
+                              type: object
+                            correlationId:
+                              type: string
+                            createdAt:
+                              type: string
+                              format: date-time
+
+
+  /reviews:
+    post:
+      summary: Submit post-checkout review (1-5 stars + comment) tied to a completed booking
+      description: Validates that the booking exists, belongs to the authenticated traveler, and has been completed (status checked_out for storage or completed for transport).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewSubmissionInput'
+      responses:
+        '201':
+          description: Review submitted successfully and audit event recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Review'
+        '400':
+          description: Validation error or booking is not checked out / completed
+        '403':
+          description: Forbidden - Traveler can only review their own bookings
+        '409':
+          description: Duplicate review - booking has already been reviewed
+
+  /reviews/bookings/{bookingId}:
+    post:
+      summary: Submit review for a specific booking ID (alias)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - rating
+              properties:
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '201':
+          description: Review submitted successfully
+        '400':
+          description: Booking not checked out
+    get:
+      summary: Check traveler review eligibility and review status for a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Review status and details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    type: object
+                    properties:
+                      hasReviewed:
+                        type: boolean
+                      canReview:
+                        type: boolean
+                      review:
+                        $ref: '#/components/schemas/Review'
+                        nullable: true
+
+  /reviews/storage/{locationId}:
+    get:
+      summary: Retrieve verified customer reviews and aggregate rating statistics for storage location
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Location reviews with computed average rating and breakdown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityReviewsResponse'
+
+  /reviews/transport/{optionId}:
+    get:
+      summary: Retrieve verified passenger reviews and aggregate rating statistics for transport option
+      parameters:
+        - name: optionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Option reviews with computed average rating and breakdown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityReviewsResponse'
+
 components:
   securitySchemes:
     bearerAuth:
@@ -931,4 +1199,193 @@ components:
         updated_at:
           type: string
           format: date-time
+
+    ReviewSubmissionInput:
+      type: object
+      required:
+        - bookingId
+        - rating
+      properties:
+        bookingId:
+          type: string
+          example: storage-bk-101
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          maxLength: 1000
+          nullable: true
+          example: Seamless drop-off and pickup experience!
+
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        bookingId:
+          type: string
+        relatedType:
+          type: string
+          enum: [storage_location, transport_option]
+        relatedId:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        author:
+          type: object
+          properties:
+            id:
+              type: string
+            fullName:
+              type: string
+
+    EntityReviewsResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
+        aggregates:
+          type: object
+          properties:
+            averageRating:
+              type: number
+              example: 4.8
+            totalReviews:
+              type: integer
+              example: 24
+            ratingBreakdown:
+              type: object
+              properties:
+                1:
+                  type: integer
+                2:
+                  type: integer
+                3:
+                  type: integer
+                4:
+                  type: integer
+                5:
+                  type: integer
+        pagination:
+          type: object
+          properties:
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalPages:
+              type: integer
+
+    ValidationErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid input parameters
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: email
+                  message:
+                    type: string
+                    example: Valid email is required
+
+    CorsForbiddenErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: CORS_FORBIDDEN
+            message:
+              type: string
+              example: Origin 'http://unauthorized-domain.com' is not allowed by CORS policy.
+
+    RateLimitExceededErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: TOO_MANY_REQUESTS
+            message:
+              type: string
+              example: Too many login attempts. Please try again after 15 minutes.
+            details:
+              type: object
+              properties:
+                retryAfterSeconds:
+                  type: integer
+                  example: 900
+                limit:
+                  type: integer
+                  example: 5
+                windowMs:
+                  type: integer
+                  example: 900000
+
+  headers:
+    X-RateLimit-Limit:
+      description: The maximum number of allowed requests in the current rate limit window.
+      schema:
+        type: integer
+        example: 5
+    X-RateLimit-Remaining:
+      description: The number of remaining requests in the current window.
+      schema:
+        type: integer
+        example: 4
+    X-RateLimit-Reset:
+      description: Epoch timestamp (in seconds) when the rate limit window resets.
+      schema:
+        type: integer
+        example: 1790477200
+    Retry-After:
+      description: Number of seconds to wait before retrying when rate limited.
+      schema:
+        type: integer
+        example: 900
+    X-Content-Type-Options:
+      description: Prevents MIME-type sniffing.
+      schema:
+        type: string
+        example: nosniff
+    X-Frame-Options:
+      description: Prevents clickjacking by disabling iframing.
+      schema:
+        type: string
+        example: DENY
 

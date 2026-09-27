@@ -13,8 +13,10 @@ import {
   RefreshCw,
   ExternalLink,
   ShieldCheck,
+  Star,
 } from 'lucide-react';
 import { api } from '../api/client';
+import { ReviewModal } from './ReviewModal';
 
 interface TransportBooking {
   id: string;
@@ -53,6 +55,7 @@ export const MyTransportBookings: React.FC = () => {
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [reviewModalBooking, setReviewModalBooking] = useState<any | null>(null);
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -266,6 +269,32 @@ export const MyTransportBookings: React.FC = () => {
                       <span className="text-[11px] text-slate-400">total paid</span>
                     </div>
 
+                    {booking.status === 'completed' && (
+                      <button
+                        onClick={() => setReviewModalBooking(booking)}
+                        className="px-3.5 py-2 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-xl transition-colors border border-amber-300 flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span>Review Ride</span>
+                      </button>
+                    )}
+
+                    {(booking.status === 'confirmed' || booking.status === 'in_progress') && (
+                      <button
+                        onClick={() => {
+                          setBookings((prev) =>
+                            prev.map((b) =>
+                              b.id === booking.id ? { ...b, status: 'completed' } : b
+                            )
+                          );
+                        }}
+                        title="Simulate ride completion to test post-checkout review flow"
+                        className="px-2.5 py-2 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                      >
+                        Simulate Completed
+                      </button>
+                    )}
+
                     {isCancellable && (
                       <button
                         onClick={() => {
@@ -330,6 +359,26 @@ export const MyTransportBookings: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Post-Checkout Review Modal */}
+      {reviewModalBooking && (
+        <ReviewModal
+          booking={{
+            id: reviewModalBooking.id,
+            type: 'transport',
+            title:
+              reviewModalBooking.transport_option?.provider?.name ||
+              'Metropolitan Licensed Taxi',
+            status: reviewModalBooking.status,
+            scheduled_at: reviewModalBooking.scheduled_at,
+            price_total: reviewModalBooking.price_total,
+          }}
+          onClose={() => setReviewModalBooking(null)}
+          onSuccess={() => {
+            fetchBookings();
+          }}
+        />
       )}
     </div>
   );

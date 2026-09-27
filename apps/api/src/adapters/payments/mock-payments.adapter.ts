@@ -4,6 +4,7 @@ import {
   PaymentIntentResult,
   PaymentResult,
   RefundResult,
+  PaymentStatus,
 } from '@travel/shared';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -15,7 +16,7 @@ export interface StoredMockIntent {
   userId: string;
   relatedType: string;
   relatedId: string;
-  status: 'INTENT' | 'AUTHORIZED' | 'CAPTURED' | 'REFUNDED' | 'FAILED';
+  status: PaymentStatus;
   clientSecret: string;
   createdAt: Date;
 }
@@ -79,7 +80,7 @@ export class MockPaymentsAdapter implements PaymentProvider {
       return {
         paymentId,
         providerRef,
-        status: 'FAILED',
+        status: PaymentStatus.FAILED,
         errorMessage: this.declineReason,
       };
     }
@@ -90,6 +91,7 @@ export class MockPaymentsAdapter implements PaymentProvider {
       input.metadata?.['test_flag'] === 'simulate_delayed_webhook';
 
     const clientSecret = `mock_secret_${providerRef}`;
+    const storedStatus = isDelayedWebhook ? PaymentStatus.INTENT : PaymentStatus.AUTHORIZED;
     const stored: StoredMockIntent = {
       paymentId,
       providerRef,
@@ -98,7 +100,7 @@ export class MockPaymentsAdapter implements PaymentProvider {
       userId: input.userId,
       relatedType: input.relatedType,
       relatedId: input.relatedId,
-      status: isDelayedWebhook ? 'INTENT' : 'AUTHORIZED',
+      status: storedStatus,
       clientSecret,
       createdAt: new Date(),
     };
@@ -108,7 +110,7 @@ export class MockPaymentsAdapter implements PaymentProvider {
     return {
       paymentId,
       providerRef,
-      status: isDelayedWebhook ? 'INTENT' : 'AUTHORIZED',
+      status: storedStatus,
       clientSecret,
     };
   }
@@ -123,20 +125,20 @@ export class MockPaymentsAdapter implements PaymentProvider {
       return {
         paymentId,
         providerRef: paymentRef,
-        status: 'FAILED',
+        status: PaymentStatus.FAILED,
         errorMessage: this.captureFailureReason,
       };
     }
 
     const stored = this.intents.get(paymentRef);
     if (stored) {
-      stored.status = 'CAPTURED';
+      stored.status = PaymentStatus.CAPTURED;
     }
 
     return {
       paymentId,
       providerRef: paymentRef,
-      status: 'CAPTURED',
+      status: PaymentStatus.CAPTURED,
     };
   }
 
@@ -148,13 +150,13 @@ export class MockPaymentsAdapter implements PaymentProvider {
     const stored = this.intents.get(paymentRef);
 
     if (stored) {
-      stored.status = 'REFUNDED';
+      stored.status = PaymentStatus.REFUNDED;
     }
 
     return {
       paymentId,
       providerRef: paymentRef,
-      status: 'REFUNDED',
+      status: PaymentStatus.REFUNDED,
       refundedAmount: amount !== undefined ? amount : (stored?.amount || 0),
     };
   }
@@ -165,7 +167,7 @@ export class MockPaymentsAdapter implements PaymentProvider {
     return {
       paymentId: res.paymentId,
       providerRef: res.providerRef,
-      status: res.status === 'INTENT' ? 'AUTHORIZED' : res.status,
+      status: (res.status === PaymentStatus.INTENT || (res.status as string) === 'INTENT' || (res.status as string) === 'intent') ? PaymentStatus.AUTHORIZED : (res.status as any),
       errorMessage: res.errorMessage,
     };
   }

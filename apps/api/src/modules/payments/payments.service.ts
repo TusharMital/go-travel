@@ -65,7 +65,7 @@ export class PaymentsService {
       metadata: input.metadata,
     });
 
-    if (result.status === 'FAILED') {
+    if (result.status === PaymentStatus.FAILED || (result.status as string) === 'FAILED') {
       const failedPayment = await prisma.payment.create({
         data: {
           user_id: userId,
@@ -148,7 +148,7 @@ export class PaymentsService {
     const provider = getPaymentsAdapter();
     const result = await provider.capture(input.provider_ref, input.amount || Number(payment.amount));
 
-    if (result.status === 'FAILED') {
+    if (result.status === PaymentStatus.FAILED || (result.status as string) === 'FAILED') {
       await prisma.payment.update({
         where: { id: payment.id },
         data: { status: PaymentStatus.FAILED },
@@ -218,7 +218,7 @@ export class PaymentsService {
     const refundAmount = input.amount !== undefined ? input.amount : Number(payment.amount);
     const result = await provider.refund(payment.provider_ref || payment.id, refundAmount, input.reason);
 
-    if (result.status === 'FAILED') {
+    if (result.status === PaymentStatus.FAILED || (result.status as string) === 'FAILED') {
       throw new AppError(result.errorMessage || 'Refund processing failed.', 500, 'REFUND_FAILED');
     }
 

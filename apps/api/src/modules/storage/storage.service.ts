@@ -142,9 +142,24 @@ export class StorageService {
           lng: loc.lng,
         });
 
-        // 7. Rating score (default 4.8 from seed data)
-        const rating = 4.8;
-        const reviewCount = 24;
+        // 7. Dynamic rating score from reviews table with fallback
+        let rating = 4.8;
+        let reviewCount = 24;
+        try {
+          if (prisma.review?.aggregate) {
+            const reviewsAggregate = await prisma.review.aggregate({
+              where: { related_type: 'storage_location', related_id: loc.id },
+              _avg: { rating: true },
+              _count: { _all: true },
+            });
+            if (reviewsAggregate?._count?._all && reviewsAggregate._count._all > 0) {
+              reviewCount = reviewsAggregate._count._all;
+              rating = Number(reviewsAggregate._avg?.rating?.toFixed(1) || 4.8);
+            }
+          }
+        } catch {
+          // Keep defaults
+        }
 
         // 8. Relevance Score calculation
         // Distance score (closer = higher, up to 10km)
@@ -241,12 +256,30 @@ export class StorageService {
       walkingTime = await provider.estimateWalkingTime(fromCoord, { lat: loc.lat, lng: loc.lng });
     }
 
+    let rating = 4.8;
+    let reviewCount = 24;
+    try {
+      if (prisma.review?.aggregate) {
+        const reviewsAggregate = await prisma.review.aggregate({
+          where: { related_type: 'storage_location', related_id: loc.id },
+          _avg: { rating: true },
+          _count: { _all: true },
+        });
+        if (reviewsAggregate?._count?._all && reviewsAggregate._count._all > 0) {
+          reviewCount = reviewsAggregate._count._all;
+          rating = Number(reviewsAggregate._avg?.rating?.toFixed(1) || 4.8);
+        }
+      }
+    } catch {
+      // Keep defaults
+    }
+
     return {
       ...loc,
       distance,
       walking_time: walkingTime,
-      rating: 4.8,
-      review_count: 24,
+      rating,
+      review_count: reviewCount,
     };
   }
 
@@ -542,7 +575,7 @@ export class StorageService {
 
     // Role-based authorization
     const isOwner = booking.user_id === userId;
-    const isPartner = booking.location.provider.partner_account.user_id === userId;
+    const isPartner = booking.location?.provider?.partner_account?.user_id === userId;
     const isAdmin = userRole === 'admin';
 
     if (!isOwner && !isPartner && !isAdmin) {

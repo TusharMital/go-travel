@@ -11,8 +11,11 @@ import {
   ArrowRight,
   ShieldCheck,
   RefreshCw,
+  Star,
+  Check,
 } from 'lucide-react';
 import { apiClient } from '../api/client';
+import { ReviewModal } from './ReviewModal';
 
 export const MyStorageBookings: React.FC = () => {
   const [bookings, setBookings] = useState<any[]>([]);
@@ -20,6 +23,7 @@ export const MyStorageBookings: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelModalBooking, setCancelModalBooking] = useState<any | null>(null);
+  const [reviewModalBooking, setReviewModalBooking] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState('Trip schedule changed');
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -238,6 +242,36 @@ export const MyStorageBookings: React.FC = () => {
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    {booking.status === 'checked_out' && (
+                      <button
+                        onClick={() => setReviewModalBooking(booking)}
+                        className="px-3.5 py-1.5 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span>Review Experience</span>
+                      </button>
+                    )}
+
+                    {(booking.status === 'confirmed' || booking.status === 'checked_in') && (
+                      <button
+                        onClick={() => {
+                          setBookings((prev) =>
+                            prev.map((b) =>
+                              b.id === booking.id ? { ...b, status: 'checked_out' } : b
+                            )
+                          );
+                          setFeedback({
+                            message: `Luggage pickup simulated for Ref #${booking.id.slice(0, 8)}. Status updated to checked_out. You may now submit a verified review!`,
+                            type: 'success',
+                          });
+                        }}
+                        title="Simulate partner checking out your bags to test post-checkout review flow"
+                        className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors"
+                      >
+                        Simulate Check-out
+                      </button>
+                    )}
+
                     {isConfirmed && (
                       <button
                         onClick={() => setCancelModalBooking(booking)}
@@ -301,6 +335,30 @@ export const MyStorageBookings: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Post-Checkout Review Modal */}
+      {reviewModalBooking && (
+        <ReviewModal
+          booking={{
+            id: reviewModalBooking.id,
+            type: 'storage',
+            title: reviewModalBooking.location?.name || 'Alexanderplatz Luggage Hub',
+            status: reviewModalBooking.status,
+            drop_off_at: reviewModalBooking.drop_off_at,
+            pick_up_at: reviewModalBooking.pick_up_at,
+            bag_count: reviewModalBooking.bag_count,
+            price_total: reviewModalBooking.price_total,
+          }}
+          onClose={() => setReviewModalBooking(null)}
+          onSuccess={() => {
+            fetchBookings();
+            setFeedback({
+              message: 'Thank you! Your verified review has been submitted and recorded.',
+              type: 'success',
+            });
+          }}
+        />
       )}
     </div>
   );

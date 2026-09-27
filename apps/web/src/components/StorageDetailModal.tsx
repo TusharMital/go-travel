@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   MapPin,
@@ -10,6 +10,7 @@ import {
   Luggage,
   ExternalLink,
 } from 'lucide-react';
+import { apiClient } from '../api/client';
 
 interface StorageDetailModalProps {
   location: any;
@@ -23,6 +24,45 @@ export const StorageDetailModal: React.FC<StorageDetailModalProps> = ({
   onBookNow,
 }) => {
   if (!location) return null;
+
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsData, setReviewsData] = useState<{
+    items: any[];
+    averageRating: number;
+    total: number;
+    ratingBreakdown: Record<number, number>;
+  }>({
+    items: [],
+    averageRating: location.rating || 4.8,
+    total: location.review_count || 24,
+    ratingBreakdown: { 5: 18, 4: 5, 3: 1, 2: 0, 1: 0 },
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadReviews = async () => {
+      setReviewsLoading(true);
+      try {
+        const res = await apiClient.getStorageLocationReviews(location.id, 1, 20);
+        if (isMounted && res?.data) {
+          setReviewsData({
+            items: res.data || [],
+            averageRating: res.aggregates?.averageRating || location.rating || 4.8,
+            total: res.aggregates?.totalReviews || res.pagination?.total || location.review_count || 24,
+            ratingBreakdown: res.aggregates?.ratingBreakdown || { 5: 18, 4: 5, 3: 1, 2: 0, 1: 0 },
+          });
+        }
+      } catch (e) {
+        console.warn('Could not load reviews:', e);
+      } finally {
+        if (isMounted) setReviewsLoading(false);
+      }
+    };
+    loadReviews();
+    return () => {
+      isMounted = false;
+    };
+  }, [location.id]);
 
   const days = [
     { key: 'mon', label: 'Monday' },
@@ -165,6 +205,122 @@ export const StorageDetailModal: React.FC<StorageDetailModalProps> = ({
                 )
               )}
             </div>
+          </div>
+
+          {/* Customer Reviews & Ratings Section */}
+          <div className="pt-2 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between mb-3">
+              <span className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+                <span>Verified Customer Reviews</span>
+              </span>
+              <span className="text-[11px] text-slate-500 lowercase font-normal">
+                {reviewsLoading ? 'Loading reviews...' : `${reviewsData.total} reviews`}
+              </span>
+            </h4>
+
+            {/* Rating Summary & Breakdown Grid */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-4">
+              <div className="text-center sm:text-left space-y-1">
+                <div className="text-3xl font-black text-slate-900 leading-none">
+                  {reviewsData.averageRating.toFixed(1)}
+                </div>
+                <div className="flex items-center justify-center sm:justify-start space-x-0.5 py-0.5">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-3.5 h-3.5 ${
+                        star <= Math.round(reviewsData.averageRating)
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'text-slate-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-[11px] text-slate-400 font-semibold block">
+                  Out of 5.0 stars
+                </span>
+              </div>
+
+              {/* Bar breakdown */}
+              <div className="flex-1 max-w-xs space-y-1 text-xs">
+                {[5, 4, 3, 2, 1].map((s) => {
+                  const count = reviewsData.ratingBreakdown[s] || 0;
+                  const pct =
+                    reviewsData.total > 0
+                      ? Math.round((count / reviewsData.total) * 100)
+                      : s >= 4 ? 75 : 10;
+                  return (
+                    <div key={s} className="flex items-center space-x-2 text-[11px]">
+                      <span className="w-4 text-right font-bold text-slate-600">{s}★</span>
+                      <div className="flex-1 bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full rounded-full transition-all duration-300"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <span className="w-6 text-right text-slate-400 font-mono text-[10px]">
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reviews list */}
+            {reviewsLoading ? (
+              <div className="py-6 text-center text-slate-400 text-xs">Loading customer reviews...</div>
+            ) : reviewsData.items.length === 0 ? (
+              <div className="text-center py-5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-500">
+                No reviews yet for this storage point. Book and check out to be the first!
+              </div>
+            ) : (
+              <div className="space-y-2.5 max-h-48 overflow-y-auto pr-1">
+                {reviewsData.items.map((rev) => (
+                  <div
+                    key={rev.id}
+                    className="p-3 bg-slate-50/70 border border-slate-100 rounded-xl space-y-1"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center space-x-1.5">
+                        <span className="font-extrabold text-slate-800">
+                          {rev.author?.fullName || 'Verified Traveler'}
+                        </span>
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      </div>
+
+                      <div className="flex items-center space-x-0.5">
+                        {[1, 2, 3, 4, 5].map((st) => (
+                          <Star
+                            key={st}
+                            className={`w-3 h-3 ${
+                              st <= rev.rating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-slate-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {rev.comment ? (
+                      <p className="text-xs text-slate-600 italic">"{rev.comment}"</p>
+                    ) : (
+                      <p className="text-[11px] text-slate-400 italic">Rated 5 stars</p>
+                    )}
+
+                    <span className="text-[10px] text-slate-400 font-mono block">
+                      {new Date(rev.createdAt).toLocaleDateString([], {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Actions */}

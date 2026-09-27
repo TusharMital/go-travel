@@ -62,6 +62,8 @@ export interface IMapsProvider extends LocationProvider {
   ): Promise<DistanceMatrixResult>;
 }
 
+import { PaymentStatus } from '../types/index.js';
+
 export interface PaymentIntentInput {
   amount: number;
   currency: string;
@@ -76,7 +78,7 @@ export interface PaymentIntentInput {
 export interface PaymentIntentResult {
   paymentId: string;
   providerRef: string;
-  status: 'INTENT' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED';
+  status: PaymentStatus | 'INTENT' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED' | 'intent' | 'authorized' | 'captured' | 'failed';
   clientSecret?: string;
   errorMessage?: string;
 }
@@ -84,7 +86,7 @@ export interface PaymentIntentResult {
 export interface PaymentResult {
   paymentId: string;
   providerRef: string;
-  status: 'AUTHORIZED' | 'CAPTURED' | 'FAILED';
+  status: PaymentStatus | 'AUTHORIZED' | 'CAPTURED' | 'FAILED' | 'authorized' | 'captured' | 'failed';
   clientSecret?: string;
   errorMessage?: string;
 }
@@ -92,7 +94,7 @@ export interface PaymentResult {
 export interface RefundResult {
   paymentId: string;
   providerRef: string;
-  status: 'REFUNDED' | 'FAILED';
+  status: PaymentStatus | 'REFUNDED' | 'FAILED' | 'refunded' | 'failed';
   refundedAmount: number;
   errorMessage?: string;
 }

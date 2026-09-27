@@ -831,6 +831,54 @@ export class AdminService {
       },
     };
   }
+
+  /**
+   * Dedicated support/admin query to retrieve all audit events for a specific entity ID
+   * in chronological order with actor information and state diffs.
+   */
+  async getAuditLogsByEntityId(entityId: string) {
+    const events = await prisma.auditEvent.findMany({
+      where: {
+        entity_id: entityId,
+      },
+      orderBy: { created_at: 'desc' },
+      include: {
+        actor: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    return {
+      entityId,
+      total: events.length,
+      events: events.map((e) => ({
+        id: e.id,
+        action: e.action,
+        entityType: e.entity_type,
+        entityId: e.entity_id,
+        actorUserId: e.actor_user_id,
+        actor: e.actor
+          ? {
+              id: e.actor.id,
+              fullName: e.actor.full_name,
+              email: e.actor.email,
+              role: e.actor.role,
+            }
+          : null,
+        beforeState: e.before_state,
+        afterState: e.after_state,
+        correlationId: e.correlation_id,
+        createdAt: e.created_at,
+      })),
+    };
+  }
 }
 
 export const adminService = new AdminService();
+
